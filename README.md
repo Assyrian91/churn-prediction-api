@@ -77,6 +77,20 @@ DATA='{
 # Replace YOUR_RENDER_URL with the URL from your Render dashboard
 curl -X POST -H "Content-Type: application/json" -d "$DATA" (https://churn-prediction-api-9lrl.onrender.com/)
 
-Author
- * Khoshaba Odeesho - LinkedIn: http://linkedin.com/in/khoshaba-odeesho-17b5b92aa
-<!-- end list -->
+🎯 Goals Achieved
+	•	✅ Built and trained churn prediction ML model
+	•	✅ Packaged code using modular structure
+	•	✅ Created FastAPI app to serve model predictions
+	•	✅ Containerized app with Docker
+	•	✅ Deployed to cloud (Render) with live API
+
+Khoshaba Odeesho
+📍 Melbourne | 💼 Data Analyst
+🔗 LinkedIn :http://linkedin.com/in/khoshaba-odeesho-17b5b92aa
+
+
+-----
+🏁 Future Improvements
+	•	Add monitoring with Prometheus/Grafana
+	•	Automate CI/CD with GitHub Actions
+	•	Improve model performance using feature engineering
