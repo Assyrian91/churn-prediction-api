@@ -24,4 +24,4 @@ jobs:
         with:
           context: .
           push: true
-          tags: khoshab06/churn-prediction-api:latest
+          tags: khoshaba06/churn-prediction-api:latest
