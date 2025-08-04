@@ -86,4 +86,4 @@ if submitted:
         st.error(f"Connection error: {e}")
 
 st.markdown("---")
-st.markdown("Built with ❤️ by You")
+st.markdown("Built by khoshaba")
