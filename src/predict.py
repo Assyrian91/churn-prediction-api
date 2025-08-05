@@ -7,8 +7,9 @@ import joblib
 import pandas as pd
 import numpy as np
 import logging
-from typing import Dict, Union
+from typing import Dict, Union, List
 from pydantic import BaseModel
+from fastapi import FastAPI
 
 # Setup logging
 logging.basicConfig(level=logging.INFO)
@@ -18,13 +19,18 @@ logger = logging.getLogger(__name__)
 # Load model and encoders
 # =========================
 
+# Global variables for the model artifacts
+model: any
+scaler: any
+encoder: any
+
 try:
     model = joblib.load("models/churn_prediction_model.pkl")
     scaler = joblib.load("models/scaler.pkl")
     encoder = joblib.load("models/encoder.pkl")
     logger.info("✅ Model and artifacts loaded successfully.")
 except Exception as e:
-    logger.error("❌ Failed to load model artifacts.")
+    logger.error("❌ Failed to load model artifacts. Please ensure 'models/churn_prediction_model.pkl', 'models/scaler.pkl', and 'models/encoder.pkl' exist.")
     raise e
 
 # =========================
@@ -60,6 +66,7 @@ class CustomerData(BaseModel):
 def preprocess_input(customer_data: Dict) -> pd.DataFrame:
     """
     Preprocess customer data: encode, scale, and prepare for prediction.
+    This logic must perfectly match the training preprocessing.
     """
     df = pd.DataFrame([customer_data])
 
@@ -68,7 +75,6 @@ def preprocess_input(customer_data: Dict) -> pd.DataFrame:
 
     # Define numeric and categorical columns
     numeric_cols = ['tenure', 'MonthlyCharges', 'TotalCharges']
-    # 'SeniorCitizen' is a numeric feature but should not be scaled
     categorical_cols = df.drop(columns=['customerID'] + numeric_cols + ['SeniorCitizen']).columns.tolist()
 
     # Separate numeric and categorical data
@@ -91,28 +97,33 @@ def preprocess_input(customer_data: Dict) -> pd.DataFrame:
     processed_df = pd.concat([df_scaled_numeric, df_encoded_categorical, df_senior], axis=1)
     
     # Reorder columns to match the training data
-    # (This is important for the model to work correctly)
     all_features = df_scaled_numeric.columns.tolist() + df_encoded_categorical.columns.tolist() + df_senior.columns.tolist()
     processed_df = processed_df[all_features]
 
     return processed_df
+
+def predict_churn(customer_data: Dict) -> str:
+    """
+    Make a churn prediction for the given customer data.
+    """
+    processed = preprocess_input(customer_data)
+    prediction = model.predict(processed)[0]
+    return "Churn" if prediction == 1 else "No Churn"
+
 # =========================
 # FastAPI Integration
 # =========================
 
-# Only import FastAPI if this module is run directly or through app
-try:
-    from fastapi import FastAPI
-    app = FastAPI()
+app = FastAPI(
+    title="Churn Prediction API",
+    description="An API to predict customer churn risk."
+)
 
-    @app.post("/predict")
-    def predict_churn_api(customer_data: CustomerData):
-        """
-        API endpoint for predicting churn.
-        """
-        customer_dict = customer_data.model_dump()  # Compatible with Pydantic v2
-        result = predict_churn(customer_dict)
-        return {"prediction": result}
-
-except ImportError:
-    logger.warning("FastAPI not installed – skipping app setup.")
+@app.post("/predict")
+def predict_churn_api(customer_data: CustomerData):
+    """
+    API endpoint for predicting churn.
+    """
+    customer_dict = customer_data.model_dump()
+    result = predict_churn(customer_dict)
+    return {"prediction": result}
