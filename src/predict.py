@@ -12,6 +12,7 @@ warnings.filterwarnings('ignore')
 from fastapi import FastAPI
 from pydantic import BaseModel
 import os
+import logging 
 
 # Define the data structure for the API
 class CustomerData(BaseModel):
@@ -35,6 +36,14 @@ class CustomerData(BaseModel):
     PaymentMethod: str
     MonthlyCharges: float
     TotalCharges: float
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(message)s',
+    filename='predictions.log'
+)
+logger = logging.getLogger(__name__)
 
 class ChurnPredictor:
     def __init__(self, model_path: str = 'models/churn_prediction_model.pkl'):
@@ -138,7 +147,7 @@ class ChurnPredictor:
             else:
                 risk_level = "LOW"
             
-            return {
+            result = {
                 'customer_id': customer_data.get('customer_id', 'unknown'),
                 'churn_probability': float(churn_probability),
                 'will_churn': bool(churn_prediction),
@@ -146,12 +155,20 @@ class ChurnPredictor:
                 'confidence': float(max(churn_probability, 1-churn_probability)),
                 'status': 'success'
             }
+
+            # Log the prediction result
+            logger.info(f"Prediction for customer {customer_data.get('customerID', 'unknown')}: {result}")
+            
+            return result
             
         except Exception as e:
-            return {
+            error_result = {
                 'error': str(e),
                 'status': 'error'
             }
+            # Log the error
+            logger.error(f"Error for customer {customer_data.get('customerID', 'unknown')}: {error_result}")
+            return error_result
 
 # Initialize the FastAPI app
 app = FastAPI(
@@ -179,7 +196,7 @@ if __name__ == "__main__":
     
     # Test with a sample customer dictionary (raw data format)
     sample_customer_raw = {
-        'customer_id': 'TEST001',
+        'customerID': 'TEST001',
         'gender': 'Male',
         'SeniorCitizen': 0,
         'Partner': 'Yes',
