@@ -177,8 +177,7 @@ app = FastAPI(
 )
 
 # Initialize the predictor once when the app starts
-model_path = os.path.join(os.path.dirname(__file__), '../models/churn_prediction_model.pkl')
-predictor = ChurnPredictor(model_path=model_path)
+model_path = 'models/churn_prediction_model.pkl'
 
 @app.post("/predict")
 def predict_churn_api(customer_data: CustomerData):
