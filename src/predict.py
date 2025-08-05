@@ -94,7 +94,8 @@ def predict_churn(customer_data: Dict) -> str:
     Make a churn prediction for the given customer data.
     """
     processed = preprocess_input(customer_data)
-    prediction = model.predict(processed)[0]
+    # Convert the DataFrame to a numpy array before predicting
+    prediction = model.predict(processed.to_numpy())[0]
     return "Churn" if prediction == 1 else "No Churn"
 
 # =========================
