@@ -1,4 +1,3 @@
-# src/predict.py
 """
 Production-ready prediction module
 Author: Khoshaba Odeesho
@@ -10,6 +9,32 @@ import numpy as np
 from typing import Dict, List
 import warnings
 warnings.filterwarnings('ignore')
+from fastapi import FastAPI
+from pydantic import BaseModel
+import os
+
+# Define the data structure for the API
+class CustomerData(BaseModel):
+    customerID: str
+    gender: str
+    SeniorCitizen: int
+    Partner: str
+    Dependents: str
+    tenure: int
+    PhoneService: str
+    MultipleLines: str
+    InternetService: str
+    OnlineSecurity: str
+    OnlineBackup: str
+    DeviceProtection: str
+    TechSupport: str
+    StreamingTV: str
+    StreamingMovies: str
+    Contract: str
+    PaperlessBilling: str
+    PaymentMethod: str
+    MonthlyCharges: float
+    TotalCharges: float
 
 class ChurnPredictor:
     def __init__(self, model_path: str = 'models/churn_prediction_model.pkl'):
@@ -127,6 +152,26 @@ class ChurnPredictor:
                 'error': str(e),
                 'status': 'error'
             }
+
+# Initialize the FastAPI app
+app = FastAPI(
+    title="Churn Prediction API",
+    description="An API to predict customer churn risk."
+)
+
+# Initialize the predictor once when the app starts
+model_path = os.path.join(os.path.dirname(__file__), '../models/churn_prediction_model.pkl')
+predictor = ChurnPredictor(model_path=model_path)
+
+@app.post("/predict")
+def predict_churn_api(customer_data: CustomerData):
+    """
+    API endpoint for predicting churn.
+    """
+    customer_dict = customer_data.dict()
+    prediction_result = predictor.predict_churn(customer_dict)
+    return prediction_result
+
 
 # Test the predictor with a realistic sample
 if __name__ == "__main__":
