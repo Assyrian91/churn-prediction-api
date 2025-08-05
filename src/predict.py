@@ -113,5 +113,6 @@ def predict_churn_api(customer_data: CustomerData):
     API endpoint for predicting churn.
     """
     customer_dict = customer_data.model_dump()
+    print("Received data:", customer_dict)
     result = predict_churn(customer_dict)
     return {"prediction": result}

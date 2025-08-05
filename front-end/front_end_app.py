@@ -8,6 +8,8 @@ try:
         st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
 except FileNotFoundError:
     st.warning("⚠️ CSS file not found! Please create a '.streamlit/style.css' file.")
+# === 🔗 API Endpoint ===
+API_URL = "https://churn-prediction-api-9lrl.onrender.com/predict"
 
 # === 🖼️ Add logo ===
 # Replace 'logo.png' with your actual logo filename
