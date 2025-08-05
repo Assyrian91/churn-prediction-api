@@ -69,35 +69,39 @@ def preprocess_input(customer_data: Dict) -> pd.DataFrame:
     This logic must perfectly match the training preprocessing.
     """
     df = pd.DataFrame([customer_data])
-    df["TotalCharges"] = pd.to_numeric(df["TotalCharges"], errors="coerce").fillna(0.0)
-    numeric_cols = ['tenure', 'MonthlyCharges', 'TotalCharges', 'SeniorCitizen']
-    categorical_cols = df.drop(columns=['customerID'] + numeric_cols).columns.tolist()
     
-    df_numeric = df[numeric_cols]
-    df_categorical = df[categorical_cols]
+    # Ensure numeric conversion
+    df["TotalCharges"] = pd.to_numeric(df["TotalCharges"], errors="coerce").fillna(0.0)
 
+    # Get the expected numeric and categorical columns from the encoder and scaler
+    numeric_cols = scaler.feature_names_in_.tolist()
+    expected_categorical_cols = encoder.feature_names_in_.tolist()
+
+    # Filter only the columns seen during training
+    df_numeric = df[numeric_cols]
+    df_categorical = df[expected_categorical_cols]
+
+    # Transform
     df_scaled_numeric = pd.DataFrame(scaler.transform(df_numeric), columns=numeric_cols)
     df_encoded_categorical = pd.DataFrame(
         encoder.transform(df_categorical).toarray(),
-        columns=encoder.get_feature_names_out(categorical_cols)
+        columns=encoder.get_feature_names_out(expected_categorical_cols)
     )
-    
+
+    # Final processed dataframe
     processed_df = pd.concat([df_scaled_numeric, df_encoded_categorical], axis=1)
-    
-    all_features = df_scaled_numeric.columns.tolist() + df_encoded_categorical.columns.tolist()
-    processed_df = processed_df[all_features]
 
     return processed_df
-
 def predict_churn(customer_data: Dict) -> str:
     """
     Make a churn prediction for the given customer data.
     """
     processed = preprocess_input(customer_data)
-    # Convert the DataFrame to a numpy array before predicting
-    prediction = model.predict(processed.to_numpy())[0]
-    return "Churn" if prediction == 1 else "No Churn"
+    print("Processed columns:", processed.columns.tolist())
+    # print("Expected by model:", model.feature_names_in_.tolist())
 
+    prediction = model.predict(processed)[0]  
+    return "Churn" if prediction == 1 else "No Churn"
 # =========================
 # FastAPI Integration
 # =========================
