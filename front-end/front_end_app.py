@@ -1,19 +1,30 @@
 import streamlit as st
 import requests
+from PIL import Image
 
-# Set the title of the Streamlit app
+# This code is essential for the styling changes we discussed
+try:
+    with open('.streamlit/style.css') as f:
+        st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
+except FileNotFoundError:
+    st.warning("⚠️ CSS file not found! Please create a '.streamlit/style.css' file.")
+
+# === 🖼️ Add logo ===
+# Replace 'logo.png' with your actual logo filename
+try:
+    logo = Image.open("assets/logo.jpeg")
+    st.image(logo, width=200)
+except FileNotFoundError:
+    st.warning("⚠️ Logo not found! Please add 'logo.png' to the 'assets' folder.")
+
+# === 🏷️ App Title ===
 st.title('Customer Churn Prediction API')
 st.markdown("### Predicting Customer Churn using FastAPI and MLOps Pipeline")
 
-# Define the API endpoint
-# Replace with your actual Render URL
-API_URL = "https://churn-prediction-api-9lrl.onrender.com/predict"
-
-# Create a form for user input
+# === 📝 User Form ===
 with st.form("churn_form"):
     st.header("Customer Information")
 
-    # Input fields for customer data
     customer_id = st.text_input("Customer ID", value="123456")
     gender = st.selectbox("Gender", ["Male", "Female"])
     senior_citizen = st.selectbox("Senior Citizen", [0, 1])
@@ -35,12 +46,9 @@ with st.form("churn_form"):
     monthly_charges = st.number_input("Monthly Charges", value=84.85)
     total_charges = st.number_input("Total Charges", value=1990.50)
 
-    # Submission button
     submitted = st.form_submit_button("Predict Churn")
 
-# If the button is pressed, send data to the API
 if submitted:
-    # Prepare the data as a JSON payload, ensuring it matches the API's PascalCase
     data = {
         "customerID": customer_id,
         "gender": gender,
@@ -65,25 +73,19 @@ if submitted:
     }
 
     try:
-        # Make the POST request to the API
         response = requests.post(API_URL, json=data)
 
-        # Check if the request was successful
         if response.status_code == 200:
             result = response.json()
             st.success(f"Prediction Result for Customer ID: {result['customer_id']}")
-            
-            # Display prediction details
             st.metric("Churn Probability", f"{result['churn_probability']:.2%}")
             st.write(f"**Will Churn:** {'Yes' if result['will_churn'] else 'No'}")
             st.write(f"**Risk Level:** {result['risk_level']}")
             st.write(f"**Confidence:** {result['confidence']:.2%}")
-
         else:
             st.error(f"Error from API: {response.status_code} - {response.text}")
-
     except requests.exceptions.RequestException as e:
         st.error(f"Connection error: {e}")
 
 st.markdown("---")
-st.markdown("Built by khoshaba")
+st.markdown("Built by Khoshaba Odeesho")
