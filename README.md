@@ -1,44 +1,75 @@
-# 🚀 Churn Prediction MLOps Pipeline
+# 🧠 Churn Prediction – MLOps Pipeline 🚀
 
-### The Challenge
-In the highly competitive telecommunications market, retaining customers is crucial. This project addresses the challenge of predicting which customers are likely to churn (leave the service) by building a robust MLOps pipeline.
+A full-stack machine learning pipeline for predicting customer churn, built with **FastAPI, Streamlit, Docker, and CI/CD on GitHub Actions**.
 
-### The Solution: A Fully Operational MLOps Pipeline
-This project is an end-to-end MLOps solution. It integrates a machine learning model, a powerful FastAPI backend, and an interactive Streamlit frontend. Everything is containerized using Docker to ensure consistency and easy deployment.
+---
 
-You can view and interact with the live application deployed for the world to see:
-**[https://churn-mlops-pipeline.streamlit.app/](https://churn-mlops-pipeline.streamlit.app/)**
+## 🔴 Live Demo
+- 📊 **Streamlit UI:** [churn-mlops-pipeline.streamlit.app](https://churn-mlops-pipeline.streamlit.app)  
+- 🌐 **HTML Frontend (Render):** [churn-prediction-api-front-end.onrender.com](https://churn-prediction-api-front-end.onrender.com)  
+- 🧬 **GitHub Repo:** [Churn Prediction API](https://github.com/Assyrian91/churn-prediction-api)
 
-### 📁 Project Structure
+---
 
-The project is thoughtfully organized to manage the entire lifecycle of the machine learning model:
+## 🧱 Project Architecture
 
--   **`data/`**: Stores the raw and processed datasets.
--   **`models/`**: Houses the trained machine learning model, saved as a `.pkl` file.
--   **`src/`**: Contains the core logic.
-    -   `src/predict.py`: The FastAPI application that loads the model and serves predictions.
--   **`front-end/`**: The Streamlit app that provides a beautiful user interface.
--   **`docker-compose.yml`**: The "blueprint" for running our multi-container application.
--   **`requirements.txt`**: A list of all Python libraries needed for the project.
+```
+churn-mlops-pipeline/
+│
+├── data/             # Raw and cleaned datasets
+├── notebooks/        # Exploratory data analysis & experiments
+├── models/           # Trained models (joblib format)
+├── src/              # FastAPI backend for predictions
+├── front-end/        # Streamlit app (user interface)
+├── Dockerfile        # Backend Docker build
+├── docker-compose.yml  # Combine frontend + backend containers
+└── .github/workflows/  # CI/CD automation (build, test, deploy)
+```
 
-### 🛠️ How to Run Locally
+---
 
-If you prefer to run this amazing project on your own machine, follow these simple steps:
+## 🐳 Run Locally with Docker
 
-1.  **Clone the repository:**
-    ```bash
-    git clone [https://github.com/Assyrian91/churn-mlops-pipeline.git](https://github.com/Assyrian91/churn-mlops-pipeline.git)
-    ```
-2.  **Navigate into the project folder:**
-    ```bash
-    cd churn-mlops-pipeline
-    ```
-3.  **Launch the pipeline with Docker:**
-    ```bash
-    docker-compose up --build
-    ```
-    This command will build and start both the frontend and backend services.
+1. Clone the repo:
+```bash
+git clone https://github.com/Assyrian91/churn-mlops-pipeline.git
+cd churn-mlops-pipeline
+```
 
-Once the services are up and running, you can access them here:
--   **Frontend App (Streamlit):** [http://localhost:8501](http://localhost:8501)
--   **Backend API Documentation (FastAPI):** [http://localhost:8000/docs](http://localhost:8000/docs)
+2. Build and run:
+```bash
+docker-compose up --build
+```
+
+3. Access:
+- UI → `http://localhost:8501`  
+- API → `http://localhost:8000/docs`
+
+---
+
+## ⚙️ CI/CD Pipeline
+
+Automated with **GitHub Actions**, triggered on every `push`:
+- ✅ Linting & testing  
+- 🐳 Docker image build  
+- 🚀 Deploy to Render or Streamlit Cloud
+
+---
+
+## 🧰 Tools & Technologies
+
+| Area        | Stack                             |
+|-------------|------------------------------------|
+| ML          | scikit-learn, Pandas               |
+| API         | FastAPI                            |
+| UI          | Streamlit, HTML/CSS (Render)       |
+| DevOps      | Docker, Docker Compose             |
+| Automation  | GitHub Actions (CI/CD)             |
+| Hosting     | Streamlit Cloud, Render            |
+
+---
+
+## 📌 About
+
+Built by [Khoshaba Odeesho](https://github.com/Assyrian91) as a real-world ML pipeline project.  
+Ready for production, extendable, and fully containerized.
