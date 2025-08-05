@@ -74,8 +74,9 @@ def preprocess_input(customer_data: Dict) -> pd.DataFrame:
     df["TotalCharges"] = pd.to_numeric(df["TotalCharges"], errors="coerce").fillna(0.0)
 
     # Define numeric and categorical columns
-    numeric_cols = ['tenure', 'MonthlyCharges', 'TotalCharges']
-    categorical_cols = df.drop(columns=['customerID'] + numeric_cols + ['SeniorCitizen']).columns.tolist()
+    # SeniorCitizen is numeric and should be included for scaling
+    numeric_cols = ['tenure', 'MonthlyCharges', 'TotalCharges', 'SeniorCitizen']
+    categorical_cols = df.drop(columns=['customerID'] + numeric_cols).columns.tolist()
 
     # Separate numeric and categorical data
     df_numeric = df[numeric_cols]
@@ -90,26 +91,14 @@ def preprocess_input(customer_data: Dict) -> pd.DataFrame:
         columns=encoder.get_feature_names_out(categorical_cols)
     )
     
-    # Add back the SeniorCitizen column which is already a number
-    df_senior = df[['SeniorCitizen']].reset_index(drop=True)
-
     # Concatenate the processed features
-    processed_df = pd.concat([df_scaled_numeric, df_encoded_categorical, df_senior], axis=1)
+    processed_df = pd.concat([df_scaled_numeric, df_encoded_categorical], axis=1)
     
     # Reorder columns to match the training data
-    all_features = df_scaled_numeric.columns.tolist() + df_encoded_categorical.columns.tolist() + df_senior.columns.tolist()
+    all_features = df_scaled_numeric.columns.tolist() + df_encoded_categorical.columns.tolist()
     processed_df = processed_df[all_features]
 
     return processed_df
-
-def predict_churn(customer_data: Dict) -> str:
-    """
-    Make a churn prediction for the given customer data.
-    """
-    processed = preprocess_input(customer_data)
-    prediction = model.predict(processed)[0]
-    return "Churn" if prediction == 1 else "No Churn"
-
 # =========================
 # FastAPI Integration
 # =========================
