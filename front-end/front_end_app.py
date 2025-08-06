@@ -80,7 +80,8 @@ if submitted:
         if response.status_code == 200:
             result = response.json()
             st.success(f"Prediction Result: {result['prediction']}")
-            st.metric("Churn Probability", f"{result['churn_probability']:.2%}")
+            st.metric("Churn Risk", f"{result['churn_risk_percent']}%")
+            st.metric("Confidence", f"{result['confidence_percent']}%")
             st.write(f"**Will Churn:** {'Yes' if result['will_churn'] else 'No'}")
             st.write(f"**Risk Level:** {result['risk_level']}")
             st.write(f"**Confidence:** {result['confidence']:.2%}")
