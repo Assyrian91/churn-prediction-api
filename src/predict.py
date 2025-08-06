@@ -16,13 +16,12 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # =========================
-# Load model and encoders
+# Load model and preprocessor
 # =========================
 
 try:
     model = joblib.load("models/churn_prediction_model.pkl")
-    scaler = joblib.load("models/scaler.pkl")
-    encoder = joblib.load("models/encoder.pkl")
+    preprocessor = joblib.load("models/preprocessor.pkl")
     logger.info("✅ Model and artifacts loaded successfully.")
 except Exception as e:
     logger.error("❌ Failed to load model artifacts.")
@@ -61,20 +60,17 @@ class CustomerData(BaseModel):
 def preprocess_input(customer_data: Dict) -> pd.DataFrame:
     df = pd.DataFrame([customer_data])
     df["TotalCharges"] = pd.to_numeric(df["TotalCharges"], errors="coerce").fillna(0.0)
+    
+    # Drop columns not used for prediction
+    df = df.drop(columns=['customerID'], errors='ignore')
+    
+    # Apply the preprocessor to the entire dataframe
+    processed_data = preprocessor.transform(df)
 
-    numeric_cols = scaler.feature_names_in_.tolist()
-    expected_categorical_cols = encoder.feature_names_in_.tolist()
+    # The preprocessor output is a numpy array, we convert it back to a dataframe
+    # with the correct feature names.
+    processed_df = pd.DataFrame(processed_data, columns=preprocessor.get_feature_names_out())
 
-    df_numeric = df[numeric_cols]
-    df_categorical = df[expected_categorical_cols]
-
-    df_scaled_numeric = pd.DataFrame(scaler.transform(df_numeric), columns=numeric_cols)
-    df_encoded_categorical = pd.DataFrame(
-        encoder.transform(df_categorical).toarray(),
-        columns=encoder.get_feature_names_out(expected_categorical_cols)
-    )
-
-    processed_df = pd.concat([df_scaled_numeric, df_encoded_categorical], axis=1)
     return processed_df
 
 # =========================
