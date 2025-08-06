@@ -10,7 +10,7 @@ import logging
 from typing import Dict, Union
 from pydantic import BaseModel
 from fastapi import FastAPI
-import dvc.api 
+import dvc.api  # أضفت هذا لدعم تحميل الملفات من DVC
 
 # Setup logging
 logging.basicConfig(level=logging.INFO)
@@ -94,4 +94,38 @@ def predict_churn(customer_data: Dict) -> Dict:
     prediction = model.predict(processed)[0]
     proba = model.predict_proba(processed)[0]
 
-    churn_risk = round(proba[1] * 100)
+    churn_risk = round(proba[1] * 100, 2)
+    confidence = round(max(proba) * 100, 2)
+    prediction_label = "Churn" if prediction == 1 else "No Churn"
+    will_churn = bool(prediction == 1)
+
+    # Risk level for user-friendly labeling
+    if churn_risk >= 75:
+        risk_level = "High"
+    elif churn_risk >= 50:
+        risk_level = "Medium"
+    else:
+        risk_level = "Low"
+
+    return {
+        "prediction": prediction_label,
+        "will_churn": will_churn,
+        "churn_probability": round(proba[1], 4),
+        "confidence": confidence,
+        "risk_level": risk_level
+    }
+
+# =========================
+# FastAPI Integration
+# =========================
+
+app = FastAPI(
+    title="Churn Prediction API",
+    description="An API to predict customer churn risk."
+)
+
+@app.post("/predict")
+def predict_churn_api(customer_data: CustomerData):
+    customer_dict = customer_data.model_dump()
+    result = predict_churn(customer_dict)
+    return result
