@@ -7,15 +7,17 @@ from sklearn.preprocessing import StandardScaler, OneHotEncoder
 from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline
 import joblib
+import dvc.api  # استيراد DVC لتحميل البيانات
 
-# Load the dataset
-# Replace 'Telco_customer_churn.csv' with the path to your data file
-df = pd.read_csv('data/Telco_customer_churn.csv')
+# Load the dataset using DVC
+with dvc.api.open('data/Telco_Customer_Churn.csv') as f:
+    df = pd.read_csv(f)
 
 # Drop irrelevant columns
 df.drop(['customerID'], axis=1, inplace=True)
 df['TotalCharges'] = pd.to_numeric(df['TotalCharges'], errors='coerce')
-df['TotalCharges'].fillna(0, inplace=True)
+# Fix Pandas warning: Use assignment instead of inplace
+df['TotalCharges'] = df['TotalCharges'].fillna(0)
 
 # Define feature and target
 X = df.drop('Churn', axis=1)
@@ -46,8 +48,10 @@ encoder = preprocessor.named_transformers_['cat']
 
 # Save the scaler and encoder to the 'models' directory
 joblib.dump(scaler, 'models/scaler.pkl')
+print("✅ Scaler saved successfully.")
+
 joblib.dump(encoder, 'models/encoder.pkl')
-print("✅ Scaler and Encoder saved successfully.")
+print("✅ Encoder saved successfully.")
 
 # Now, let's train the model
 model = RandomForestClassifier(random_state=42)
