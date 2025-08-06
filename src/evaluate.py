@@ -4,6 +4,7 @@ from sklearn.metrics import accuracy_score
 import joblib
 import logging
 import os
+import numpy as np
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
@@ -22,8 +23,11 @@ def load_model_and_data():
         # Load the test data directly from the file system
         test_df = pd.read_csv('data/Telco_customer_Churn.csv')
         
+        # FIX: Replace spaces in TotalCharges column with 0 and convert to numeric
+        test_df['TotalCharges'] = test_df['TotalCharges'].replace(' ', '0').astype(float)
+        
         # Apply preprocessing
-        X_test = test_df.drop('Churn', axis=1)
+        X_test = test_df.drop(['Churn', 'customerID'], axis=1)
         X_test_processed = preprocessor.transform(X_test)
         y_test = test_df['Churn']
         
@@ -32,6 +36,9 @@ def load_model_and_data():
     except FileNotFoundError as e:
         logging.error(f"❌ File not found error: {e}")
         raise
+    except Exception as e:
+        logging.error(f"❌ An error occurred during loading: {e}")
+        raise e
 
 # Evaluate the model
 def evaluate_model(model, X_test, y_test):
@@ -56,8 +63,8 @@ if __name__ == "__main__":
     if not os.path.exists('models/churn_prediction_model.pkl'):
         logging.error("❌ The model file 'models/churn_prediction_model.pkl' was not found.")
         logging.info("Hint: The CI/CD pipeline does not run the training script. You must commit a pre-trained model file.")
-    if not os.path.exists('data/Telco_customer_Churn_test.csv'):
-        logging.error("❌ The data file 'data/Telco_customer_Churn_test.csv' was not found.")
+    if not os.path.exists('data/Telco_customer_Churn.csv'):
+        logging.error("❌ The data file 'data/Telco_customer_Churn.csv' was not found.")
         logging.info("Hint: The CI/CD pipeline does not pull the data. You must commit the data file.")
     
     model, X_test, y_test = load_model_and_data()
