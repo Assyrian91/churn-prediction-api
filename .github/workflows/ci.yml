@@ -8,11 +8,6 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     
-    - name: Set up DVC
-      uses: iterative/setup-dvc@v1
-      with:
-        dvc-version: '3.61.0' 
-
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
@@ -22,11 +17,7 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
-        pip install dvc
-
-    - name: Pull DVC data
-      run: dvc pull
-
+    
     - name: Run evaluate script
       run: python src/evaluate.py
     
