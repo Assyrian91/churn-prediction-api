@@ -11,25 +11,27 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 def load_model_and_data():
     """Loads the trained model and test data for evaluation."""
     try:
-        logging.info("Attempting to load model and test data from local file system...")
+        logging.info("Attempting to load model, preprocessor, and test data from local file system...")
         
         # Load the trained model directly from the file system
         model = joblib.load('models/churn_prediction_model.pkl')
         
+        # Load the preprocessor
+        preprocessor = joblib.load('models/preprocessor.pkl')
+        
         # Load the test data directly from the file system
         test_df = pd.read_csv('data/Telco_customer_Churn.csv')
         
+        # Apply preprocessing
         X_test = test_df.drop('Churn', axis=1)
+        X_test_processed = preprocessor.transform(X_test)
         y_test = test_df['Churn']
         
-        logging.info("✅ Model and test data loaded successfully.")
-        return model, X_test, y_test
+        logging.info("✅ Model, preprocessor, and test data loaded successfully.")
+        return model, X_test_processed, y_test
     except FileNotFoundError as e:
         logging.error(f"❌ File not found error: {e}")
         raise
-    except Exception as e:
-        logging.error(f"❌ An error occurred during loading: {e}")
-        raise e
 
 # Evaluate the model
 def evaluate_model(model, X_test, y_test):
