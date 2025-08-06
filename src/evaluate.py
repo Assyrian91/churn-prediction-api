@@ -17,7 +17,7 @@ def load_model_and_data():
         model = joblib.load('models/churn_prediction_model.pkl')
         
         # Load the test data directly from the file system
-        test_df = pd.read_csv('data/Telco_customer_Churn_test.csv')
+        test_df = pd.read_csv('data/Telco_customer_Churn.csv')
         
         X_test = test_df.drop('Churn', axis=1)
         y_test = test_df['Churn']
