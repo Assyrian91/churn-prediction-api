@@ -84,7 +84,7 @@ if submitted:
             st.metric("Confidence", f"{result['confidence_percent']}%")
             st.write(f"**Will Churn:** {'Yes' if result['will_churn'] else 'No'}")
             st.write(f"**Risk Level:** {result['risk_level']}")
-            st.write(f"**Confidence:** {result['confidence']:.2%}")
+            st.write(f"**Confidence:** {result['confidence_percent']}%")
         else:
             st.error(f"Error from API: {response.status_code} - {response.text}")
     except requests.exceptions.RequestException as e:
