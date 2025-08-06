@@ -30,7 +30,8 @@ jobs:
       
       - name: Pull DVC data and model
         run: dvc pull
-
+      - name: Pull DVC files
+        run: dvc pull
       - name: Evaluate model performance
         run: python src/evaluate.py
         
