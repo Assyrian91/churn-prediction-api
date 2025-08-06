@@ -10,6 +10,7 @@ import logging
 from typing import Dict, Union
 from pydantic import BaseModel
 from fastapi import FastAPI
+import dvc.api 
 
 # Setup logging
 logging.basicConfig(level=logging.INFO)
@@ -20,9 +21,15 @@ logger = logging.getLogger(__name__)
 # =========================
 
 try:
-    model = joblib.load("models/churn_prediction_model.pkl")
-    scaler = joblib.load("models/scaler.pkl")
-    encoder = joblib.load("models/encoder.pkl")
+    # Load the model using DVC
+    with dvc.api.open('models/churn_prediction_model.pkl', mode='rb') as f:
+        model = joblib.load(f)
+    # Load the scaler using DVC
+    with dvc.api.open('models/scaler.pkl', mode='rb') as f:
+        scaler = joblib.load(f)
+    # Load the encoder using DVC
+    with dvc.api.open('models/encoder.pkl', mode='rb') as f:
+        encoder = joblib.load(f)
     logger.info("✅ Model and artifacts loaded successfully.")
 except Exception as e:
     logger.error("❌ Failed to load model artifacts.")
@@ -87,38 +94,4 @@ def predict_churn(customer_data: Dict) -> Dict:
     prediction = model.predict(processed)[0]
     proba = model.predict_proba(processed)[0]
 
-    churn_risk = round(proba[1] * 100, 2)
-    confidence = round(max(proba) * 100, 2)
-    prediction_label = "Churn" if prediction == 1 else "No Churn"
-    will_churn = bool(prediction == 1)
-
-    # Risk level for user-friendly labeling
-    if churn_risk >= 75:
-        risk_level = "High"
-    elif churn_risk >= 50:
-        risk_level = "Medium"
-    else:
-        risk_level = "Low"
-
-    return {
-        "prediction": prediction_label,
-        "will_churn": will_churn,
-        "churn_probability": round(proba[1], 4),
-        "confidence": confidence,
-        "risk_level": risk_level
-    }
-
-# =========================
-# FastAPI Integration
-# =========================
-
-app = FastAPI(
-    title="Churn Prediction API",
-    description="An API to predict customer churn risk."
-)
-
-@app.post("/predict")
-def predict_churn_api(customer_data: CustomerData):
-    customer_dict = customer_data.model_dump()
-    result = predict_churn(customer_dict)
-    return result
+    churn_risk = round(proba[1] * 100)
