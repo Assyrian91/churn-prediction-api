@@ -29,7 +29,9 @@ def load_model_and_data():
         # Apply preprocessing
         X_test = test_df.drop(['Churn', 'customerID'], axis=1)
         X_test_processed = preprocessor.transform(X_test)
-        y_test = test_df['Churn']
+        
+        # FIX: Encode the target variable y_test to match the model's predictions (0 and 1)
+        y_test = test_df['Churn'].apply(lambda x: 1 if x == 'Yes' else 0)
         
         logging.info("✅ Model, preprocessor, and test data loaded successfully.")
         return model, X_test_processed, y_test
