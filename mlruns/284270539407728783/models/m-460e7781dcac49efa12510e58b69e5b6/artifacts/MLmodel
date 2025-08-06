@@ -1,0 +1,22 @@
+artifact_path: file:///C:/Users/HB%20Laptop%20Store/Desktop/churn-mlops-pipeline/mlruns/284270539407728783/models/m-460e7781dcac49efa12510e58b69e5b6/artifacts
+flavors:
+  python_function:
+    env:
+      conda: conda.yaml
+      virtualenv: python_env.yaml
+    loader_module: mlflow.sklearn
+    model_path: model.pkl
+    predict_fn: predict
+    python_version: 3.13.5
+  sklearn:
+    code: null
+    pickled_model: model.pkl
+    serialization_format: cloudpickle
+    sklearn_version: 1.6.1
+mlflow_version: 3.2.0
+model_id: m-460e7781dcac49efa12510e58b69e5b6
+model_size_bytes: 19599513
+model_uuid: m-460e7781dcac49efa12510e58b69e5b6
+prompts: null
+run_id: 7dfe5cdf11ac40bfabd437bb4abe5c53
+utc_time_created: '2025-08-06 18:13:18.249286'

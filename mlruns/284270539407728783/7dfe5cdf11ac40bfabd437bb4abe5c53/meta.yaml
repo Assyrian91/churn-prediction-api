@@ -1,0 +1,14 @@
+artifact_uri: file:///C:/Users/HB%20Laptop%20Store/Desktop/churn-mlops-pipeline/mlruns/284270539407728783/7dfe5cdf11ac40bfabd437bb4abe5c53/artifacts
+end_time: 1754504013797
+entry_point_name: ''
+experiment_id: '284270539407728783'
+lifecycle_stage: active
+run_id: 7dfe5cdf11ac40bfabd437bb4abe5c53
+run_name: rumbling-midge-995
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1754503997050
+status: 3
+tags: []
+user_id: HB Laptop Store
