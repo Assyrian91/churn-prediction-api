@@ -1,0 +1,10 @@
+artifact_location: file:///C:/Users/HB%20Laptop%20Store/Desktop/churn-mlops-pipeline/mlruns/284270539407728783/models/m-e1cc2af211954cfbbecb5d9a08c4720d/artifacts
+creation_timestamp: 1754488066959
+experiment_id: '284270539407728783'
+last_updated_timestamp: 1754488082939
+model_id: m-e1cc2af211954cfbbecb5d9a08c4720d
+model_type: null
+name: churn_model_pipeline
+source_run_id: 89eb58d2a58246f98e9f58e9d2fdbee7
+status: 2
+status_message: null

@@ -1,0 +1,14 @@
+artifact_uri: file:///C:/Users/HB%20Laptop%20Store/Desktop/churn-mlops-pipeline/mlruns/284270539407728783/89eb58d2a58246f98e9f58e9d2fdbee7/artifacts
+end_time: 1754488082959
+entry_point_name: ''
+experiment_id: '284270539407728783'
+lifecycle_stage: active
+run_id: 89eb58d2a58246f98e9f58e9d2fdbee7
+run_name: blushing-bass-636
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1754488065841
+status: 3
+tags: []
+user_id: HB Laptop Store

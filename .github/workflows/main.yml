@@ -13,6 +13,11 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Setup DVC
+        uses: iterative/setup-dvc@v1
+        with:
+          dvc-version: '3.61.0' # Use your DVC version
+
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
@@ -23,9 +28,12 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
       
+      - name: Pull DVC data and model
+        run: dvc pull
+
       - name: Evaluate model performance
         run: python src/evaluate.py
-
+        
       - name: Log in to Docker Hub
         uses: docker/login-action@v3
         with:
@@ -37,4 +45,4 @@ jobs:
         with:
           context: .
           push: true
-          tags: khoshaba06/churn-prediction-api:latest
+          tags: your-docker-username/churn-prediction-api:latest

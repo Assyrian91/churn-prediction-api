@@ -6,25 +6,35 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.preprocessing import StandardScaler, OneHotEncoder
 from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline
+from sklearn.metrics import accuracy_score
 import joblib
-import dvc.api  # استيراد DVC لتحميل البيانات
+import mlflow
+import mlflow.sklearn
+import os
+import dvc.api
+
+# Set MLflow tracking URI for local storage
+# mlflow.set_tracking_uri("file:///path/to/your/mlruns")
+mlflow.set_experiment("Churn Prediction")
 
 # Load the dataset using DVC
 with dvc.api.open('data/Telco_Customer_Churn.csv') as f:
     df = pd.read_csv(f)
 
-# Drop irrelevant columns
+# Data Preprocessing
 df.drop(['customerID'], axis=1, inplace=True)
 df['TotalCharges'] = pd.to_numeric(df['TotalCharges'], errors='coerce')
-# Fix Pandas warning: Use assignment instead of inplace
-df['TotalCharges'] = df['TotalCharges'].fillna(0)
+df['TotalCharges'] = df['TotalCharges'].fillna(df['TotalCharges'].median())
 
 # Define feature and target
 X = df.drop('Churn', axis=1)
 y = df['Churn'].map({'Yes': 1, 'No': 0})
 
+# Split data for evaluation
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
 # Define numeric and categorical columns
-numeric_features = ['tenure', 'MonthlyCharges', 'TotalCharges']
+numeric_features = X.select_dtypes(include=['number']).columns.tolist()
 categorical_features = X.select_dtypes(include=['object']).columns.tolist()
 
 # Create preprocessing pipelines
@@ -39,24 +49,33 @@ preprocessor = ColumnTransformer(
     ]
 )
 
-# Apply preprocessing and get the preprocessed data
-X_preprocessed = preprocessor.fit_transform(X)
+# Combine preprocessor and model into a single pipeline
+model_pipeline = Pipeline(steps=[
+    ('preprocessor', preprocessor),
+    ('classifier', RandomForestClassifier(n_estimators=100, random_state=42))
+])
 
-# Extract and save the scaler and encoder
-scaler = preprocessor.named_transformers_['num']
-encoder = preprocessor.named_transformers_['cat']
+# Start the MLflow run and train the model inside it
+with mlflow.start_run():
+    # Train the model pipeline
+    model_pipeline.fit(X_train, y_train)
 
-# Save the scaler and encoder to the 'models' directory
-joblib.dump(scaler, 'models/scaler.pkl')
-print("✅ Scaler saved successfully.")
+    # Make predictions and evaluate
+    y_pred = model_pipeline.predict(X_test)
+    accuracy = accuracy_score(y_test, y_pred)
+    print(f"✅ Model trained with Accuracy: {accuracy:.4f}")
 
-joblib.dump(encoder, 'models/encoder.pkl')
-print("✅ Encoder saved successfully.")
+    # Log parameters and metrics to MLflow
+    mlflow.log_param("n_estimators", 100)
+    mlflow.log_param("random_state", 42)
+    mlflow.log_metric("accuracy", accuracy)
 
-# Now, let's train the model
-model = RandomForestClassifier(random_state=42)
-model.fit(X_preprocessed, y)
+    # Save the model and preprocessors to the 'models' directory
+    os.makedirs('models', exist_ok=True)
+    joblib.dump(model_pipeline['preprocessor'], 'models/preprocessor.pkl')
+    joblib.dump(model_pipeline['classifier'], 'models/churn_prediction_model.pkl')
+    print("✅ Model and Preprocessor saved locally.")
 
-# Save the trained model
-joblib.dump(model, 'models/churn_prediction_model.pkl')
-print("✅ Model saved successfully.")
+    # Log the entire pipeline as an MLflow artifact
+    mlflow.sklearn.log_model(model_pipeline, "churn_model_pipeline")
+    print("✅ Model pipeline logged to MLflow.")
