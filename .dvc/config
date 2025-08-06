@@ -1,4 +1,2 @@
-[core]
-    remote = myremote
-['remote "myremote"']
-    url = C:\dvc-store
+['remote "local-repo-cache"']
+    url = ../.dvc-cache
