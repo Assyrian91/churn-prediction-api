@@ -1,131 +1,62 @@
-"""
-Production-ready Churn Prediction API logic
-Author: Khoshaba Odeesho
-"""
-
-import joblib
 import pandas as pd
-import numpy as np
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score
+import joblib
 import logging
-from typing import Dict, Union
-from pydantic import BaseModel
-from fastapi import FastAPI
-import dvc.api  # أضفت هذا لدعم تحميل الملفات من DVC
+import os
 
-# Setup logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-# =========================
-# Load model and encoders
-# =========================
+# Load the trained model and data
+def load_model_and_data():
+    """Loads the trained model and test data for evaluation."""
+    try:
+        logging.info("Attempting to load model and test data from local file system...")
+        
+        # Load the trained model directly from the file system
+        model = joblib.load('models/churn_prediction_model.pkl')
+        
+        # Load the test data directly from the file system
+        test_df = pd.read_csv('data/Telco_customer_Churn_test.csv')
+        
+        X_test = test_df.drop('Churn', axis=1)
+        y_test = test_df['Churn']
+        
+        logging.info("✅ Model and test data loaded successfully.")
+        return model, X_test, y_test
+    except FileNotFoundError as e:
+        logging.error(f"❌ File not found error: {e}")
+        raise
+    except Exception as e:
+        logging.error(f"❌ An error occurred during loading: {e}")
+        raise e
 
-try:
-    # Load the model using DVC
-    with dvc.api.open('models/churn_prediction_model.pkl', mode='rb') as f:
-        model = joblib.load(f)
-    # Load the scaler using DVC
-    with dvc.api.open('models/scaler.pkl', mode='rb') as f:
-        scaler = joblib.load(f)
-    # Load the encoder using DVC
-    with dvc.api.open('models/encoder.pkl', mode='rb') as f:
-        encoder = joblib.load(f)
-    logger.info("✅ Model and artifacts loaded successfully.")
-except Exception as e:
-    logger.error("❌ Failed to load model artifacts.")
-    raise e
+# Evaluate the model
+def evaluate_model(model, X_test, y_test):
+    """Evaluates the model's performance and logs metrics."""
+    try:
+        logging.info("Evaluating model performance...")
+        y_pred = model.predict(X_test)
+        accuracy = accuracy_score(y_test, y_pred)
+        
+        logging.info(f"✨ Model Accuracy: {accuracy:.4f}")
+        
+        # Optional: Save metrics to a file if needed for other processes
+        with open("metrics.json", "w") as f:
+            f.write(f'{{"accuracy": {accuracy}}}')
+            
+        logging.info("✅ Model evaluation complete.")
+    except Exception as e:
+        logging.error(f"❌ An error occurred during evaluation: {e}")
+        raise e
 
-# =========================
-# Input Schema
-# =========================
-
-class CustomerData(BaseModel):
-    customerID: str
-    gender: str
-    SeniorCitizen: int
-    Partner: str
-    Dependents: str
-    tenure: int
-    PhoneService: str
-    MultipleLines: str
-    InternetService: str
-    OnlineSecurity: str
-    OnlineBackup: str
-    DeviceProtection: str
-    TechSupport: str
-    StreamingTV: str
-    StreamingMovies: str
-    Contract: str
-    PaperlessBilling: str
-    PaymentMethod: str
-    MonthlyCharges: float
-    TotalCharges: Union[float, str]
-
-# =========================
-# Preprocessing
-# =========================
-
-def preprocess_input(customer_data: Dict) -> pd.DataFrame:
-    df = pd.DataFrame([customer_data])
-    df["TotalCharges"] = pd.to_numeric(df["TotalCharges"], errors="coerce").fillna(0.0)
-
-    numeric_cols = scaler.feature_names_in_.tolist()
-    expected_categorical_cols = encoder.feature_names_in_.tolist()
-
-    df_numeric = df[numeric_cols]
-    df_categorical = df[expected_categorical_cols]
-
-    df_scaled_numeric = pd.DataFrame(scaler.transform(df_numeric), columns=numeric_cols)
-    df_encoded_categorical = pd.DataFrame(
-        encoder.transform(df_categorical).toarray(),
-        columns=encoder.get_feature_names_out(expected_categorical_cols)
-    )
-
-    processed_df = pd.concat([df_scaled_numeric, df_encoded_categorical], axis=1)
-    return processed_df
-
-# =========================
-# Prediction
-# =========================
-
-def predict_churn(customer_data: Dict) -> Dict:
-    processed = preprocess_input(customer_data)
-
-    prediction = model.predict(processed)[0]
-    proba = model.predict_proba(processed)[0]
-
-    churn_risk = round(proba[1] * 100, 2)
-    confidence = round(max(proba) * 100, 2)
-    prediction_label = "Churn" if prediction == 1 else "No Churn"
-    will_churn = bool(prediction == 1)
-
-    # Risk level for user-friendly labeling
-    if churn_risk >= 75:
-        risk_level = "High"
-    elif churn_risk >= 50:
-        risk_level = "Medium"
-    else:
-        risk_level = "Low"
-
-    return {
-        "prediction": prediction_label,
-        "will_churn": will_churn,
-        "churn_probability": round(proba[1], 4),
-        "confidence": confidence,
-        "risk_level": risk_level
-    }
-
-# =========================
-# FastAPI Integration
-# =========================
-
-app = FastAPI(
-    title="Churn Prediction API",
-    description="An API to predict customer churn risk."
-)
-
-@app.post("/predict")
-def predict_churn_api(customer_data: CustomerData):
-    customer_dict = customer_data.model_dump()
-    result = predict_churn(customer_dict)
-    return result
+if __name__ == "__main__":
+    if not os.path.exists('models/churn_prediction_model.pkl'):
+        logging.error("❌ The model file 'models/churn_prediction_model.pkl' was not found.")
+        logging.info("Hint: The CI/CD pipeline does not run the training script. You must commit a pre-trained model file.")
+    if not os.path.exists('data/Telco_customer_Churn_test.csv'):
+        logging.error("❌ The data file 'data/Telco_customer_Churn_test.csv' was not found.")
+        logging.info("Hint: The CI/CD pipeline does not pull the data. You must commit the data file.")
+    
+    model, X_test, y_test = load_model_and_data()
+    evaluate_model(model, X_test, y_test)
