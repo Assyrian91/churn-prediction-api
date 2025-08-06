@@ -1,55 +1,124 @@
+"""
+Production-ready Churn Prediction API logic
+Author: Khoshaba Odeesho
+"""
+
 import joblib
 import pandas as pd
-from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
-import warnings
-warnings.filterwarnings('ignore')
+import numpy as np
+import logging
+from typing import Dict, Union
+from pydantic import BaseModel
+from fastapi import FastAPI
 
-# 1. Load the trained model
+# Setup logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+# =========================
+# Load model and encoders
+# =========================
+
 try:
-    model = joblib.load('../models/churn_prediction_model.pkl')
-    print("✅ Model loaded successfully.")
-except FileNotFoundError:
-    print("❌ Error: Model file not found. Please check the path.")
+    model = joblib.load("models/churn_prediction_model.pkl")
+    scaler = joblib.load("models/scaler.pkl")
+    encoder = joblib.load("models/encoder.pkl")
+    logger.info("✅ Model and artifacts loaded successfully.")
+except Exception as e:
+    logger.error("❌ Failed to load model artifacts.")
+    raise e
 
-# 2. Load the data and preprocess it
-try:
-    df = pd.read_csv('../data/telco_customer_churn.csv')
-    print("✅ Data loaded successfully.")
-except FileNotFoundError:
-    print("❌ Error: Data file not found. Please check the path.")
-    exit()
+# =========================
+# Input Schema
+# =========================
 
-if 'customerID' in df.columns:
-    df = df.drop('customerID', axis=1)
+class CustomerData(BaseModel):
+    customerID: str
+    gender: str
+    SeniorCitizen: int
+    Partner: str
+    Dependents: str
+    tenure: int
+    PhoneService: str
+    MultipleLines: str
+    InternetService: str
+    OnlineSecurity: str
+    OnlineBackup: str
+    DeviceProtection: str
+    TechSupport: str
+    StreamingTV: str
+    StreamingMovies: str
+    Contract: str
+    PaperlessBilling: str
+    PaymentMethod: str
+    MonthlyCharges: float
+    TotalCharges: Union[float, str]
 
-df['TotalCharges'] = pd.to_numeric(df['TotalCharges'], errors='coerce')
-df['TotalCharges'].fillna(0, inplace=True)
+# =========================
+# Preprocessing
+# =========================
 
-df['gender'] = df['gender'].map({'Male': 1, 'Female': 0})
-binary_cols = ['Partner', 'Dependents', 'PhoneService', 'PaperlessBilling']
-for col in binary_cols:
-    if col in df.columns:
-        df[col] = df[col].map({'Yes': 1, 'No': 0})
+def preprocess_input(customer_data: Dict) -> pd.DataFrame:
+    df = pd.DataFrame([customer_data])
+    df["TotalCharges"] = pd.to_numeric(df["TotalCharges"], errors="coerce").fillna(0.0)
 
-multi_category_cols = ['MultipleLines', 'InternetService', 'OnlineSecurity',
-                        'OnlineBackup', 'DeviceProtection', 'TechSupport',
-                        'StreamingTV', 'StreamingMovies', 'Contract', 'PaymentMethod']
+    numeric_cols = scaler.feature_names_in_.tolist()
+    expected_categorical_cols = encoder.feature_names_in_.tolist()
 
-df = pd.get_dummies(df, columns=multi_category_cols, prefix=multi_category_cols, dtype=int)
+    df_numeric = df[numeric_cols]
+    df_categorical = df[expected_categorical_cols]
 
-# 3. Prepare data for evaluation
-target = df['Churn'].map({'Yes': 1, 'No': 0})
-features = df.drop('Churn', axis=1)
+    df_scaled_numeric = pd.DataFrame(scaler.transform(df_numeric), columns=numeric_cols)
+    df_encoded_categorical = pd.DataFrame(
+        encoder.transform(df_categorical).toarray(),
+        columns=encoder.get_feature_names_out(expected_categorical_cols)
+    )
 
-# 4. Make predictions and evaluate the model
-predictions = model.predict(features)
+    processed_df = pd.concat([df_scaled_numeric, df_encoded_categorical], axis=1)
+    return processed_df
 
-accuracy = accuracy_score(target, predictions)
-precision = precision_score(target, predictions)
-recall = recall_score(target, predictions)
+# =========================
+# Prediction
+# =========================
 
-print("\n--- Model Performance Metrics ---")
-print(f"Accuracy:  {accuracy:.4f}")
-print(f"Precision: {precision:.4f}")
-print(f"Recall:    {recall:.4f}")
-print("---------------------------------")
+def predict_churn(customer_data: Dict) -> Dict:
+    processed = preprocess_input(customer_data)
+
+    prediction = model.predict(processed)[0]
+    proba = model.predict_proba(processed)[0]
+
+    churn_risk = round(proba[1] * 100, 2)
+    confidence = round(max(proba) * 100, 2)
+    prediction_label = "Churn" if prediction == 1 else "No Churn"
+    will_churn = bool(prediction == 1)
+
+    # Risk level for user-friendly labeling
+    if churn_risk >= 75:
+        risk_level = "High"
+    elif churn_risk >= 50:
+        risk_level = "Medium"
+    else:
+        risk_level = "Low"
+
+    return {
+        "prediction": prediction_label,
+        "will_churn": will_churn,
+        "churn_probability": round(proba[1], 4),
+        "confidence": confidence,
+        "risk_level": risk_level
+    }
+
+# =========================
+# FastAPI Integration
+# =========================
+
+app = FastAPI(
+    title="Churn Prediction API",
+    description="An API to predict customer churn risk."
+)
+
+@app.post("/predict")
+def predict_churn_api(customer_data: CustomerData):
+    customer_dict = customer_data.model_dump()
+    result = predict_churn(customer_dict)
+    return result
