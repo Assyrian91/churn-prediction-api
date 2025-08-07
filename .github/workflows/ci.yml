@@ -7,8 +7,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
-    
-    - name: Set up DVC
+
+    - name: Set up DVC and pull data
       uses: iterative/setup-dvc@v1
       with:
         dvc-version: '3.61.0'
@@ -18,13 +18,19 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
-        python-version: '3.9'  # تم التغيير إلى Python 3.9
+        python-version: '3.9'
 
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
     
+    - name: Run data preparation script
+      run: python src/prepare_data.py
+    
+    - name: Run training script
+      run: python src/train.py
+
     - name: Run evaluate script
       run: python src/evaluate.py
     
