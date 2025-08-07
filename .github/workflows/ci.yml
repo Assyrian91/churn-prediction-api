@@ -8,13 +8,6 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    - name: Set up DVC and pull data
-      uses: iterative/setup-dvc@v1
-      with:
-        dvc-version: '3.61.0'
-    - name: Pull DVC data
-      run: dvc pull -r local-repo-cache
-
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
@@ -25,11 +18,6 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
 
-    - name: Set up MLflow tracking URI
-      run: |
-        echo "MLFLOW_TRACKING_URI=./mlruns" >> $GITHUB_ENV
-        echo "MLFLOW_ARTIFACT_URI=./mlartifacts" >> $GITHUB_ENV
-
     - name: Run data preparation script
       run: python src/prepare_data.py
     
@@ -38,7 +26,3 @@ jobs:
 
     - name: Run evaluate script
       run: python src/evaluate.py
-    
-    # - name: Build and test
-    #   run: |
-    #     docker-compose up --build
