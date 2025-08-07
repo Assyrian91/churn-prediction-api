@@ -8,13 +8,13 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     
-    # هذه الخطوات تم تعطيلها مؤقتاً
-    # - name: Set up DVC
-    #   uses: iterative/setup-dvc@v1
-    #   with:
-    #     dvc-version: '3.61.0'
-    # - name: Pull DVC data
-    #   run: dvc pull
+     
+     - name: Set up DVC
+       uses: iterative/setup-dvc@v1
+       with:
+         dvc-version: '3.61.0'
+     - name: Pull DVC data
+       run: dvc pull
 
     - name: Set up Python
       uses: actions/setup-python@v4
