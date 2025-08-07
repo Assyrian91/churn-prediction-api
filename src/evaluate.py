@@ -1,6 +1,7 @@
 import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
+from sklearn.metrics import accuracy_score, precision_score, f1_score
 import joblib
 import logging
 import os
@@ -48,19 +49,23 @@ def evaluate_model(model, X_test, y_test):
     try:
         logging.info("Evaluating model performance...")
         y_pred = model.predict(X_test)
-        accuracy = accuracy_score(y_test, y_pred)
         
+        # Calculate and log accuracy
+        accuracy = accuracy_score(y_test, y_pred)
         logging.info(f"✨ Model Accuracy: {accuracy:.4f}")
+
+        # Calculate and log precision
+        precision = precision_score(y_test, y_pred)
+        logging.info(f"✨ Model Precision: {precision:.4f}")
         
         # Optional: Save metrics to a file if needed for other processes
         with open("metrics.json", "w") as f:
-            f.write(f'{{"accuracy": {accuracy}}}')
+            f.write(f'{{"accuracy": {accuracy}, "precision": {precision}}}')
             
         logging.info("✅ Model evaluation complete.")
     except Exception as e:
         logging.error(f"❌ An error occurred during evaluation: {e}")
         raise e
-
 if __name__ == "__main__":
     if not os.path.exists('models/churn_prediction_model.pkl'):
         logging.error("❌ The model file 'models/churn_prediction_model.pkl' was not found.")
