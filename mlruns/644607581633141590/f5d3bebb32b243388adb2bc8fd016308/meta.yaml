@@ -1,0 +1,15 @@
+artifact_uri: file:///C:/Users/HB%20Laptop%20Store/Desktop/churn-mlops-pipeline/mlruns/644607581633141590/f5d3bebb32b243388adb2bc8fd016308/artifacts
+end_time: 1754590348535
+entry_point_name: ''
+experiment_id: '644607581633141590'
+lifecycle_stage: active
+run_id: f5d3bebb32b243388adb2bc8fd016308
+run_name: fun-mule-989
+run_uuid: f5d3bebb32b243388adb2bc8fd016308
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1754590348441
+status: 4
+tags: []
+user_id: HB Laptop Store

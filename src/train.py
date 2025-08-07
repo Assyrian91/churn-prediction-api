@@ -1,81 +1,101 @@
-# src/train.py
-
 import pandas as pd
-from sklearn.model_selection import train_test_split
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.preprocessing import StandardScaler, OneHotEncoder
-from sklearn.compose import ColumnTransformer
-from sklearn.pipeline import Pipeline
-from sklearn.metrics import accuracy_score
-import joblib
+import pickle
+import json
+import os
 import mlflow
 import mlflow.sklearn
-import os
-import dvc.api
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.preprocessing import LabelEncoder, StandardScaler
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
+from config_manager import ConfigManager
+from datetime import datetime
 
-# Set MLflow tracking URI for local storage
-# mlflow.set_tracking_uri("file:///path/to/your/mlruns")
-mlflow.set_experiment("Churn Prediction")
+def train_model():
+    config = ConfigManager()
+    
+    # MLflow
+    experiment_name = config.get('training.experiment_name')
+    mlflow.set_experiment(experiment_name)
+    
+    with mlflow.start_run():
+        
+        mlflow.log_param("training_date", datetime.now().isoformat())
+        
+        train_path = config.get('paths.processed_train')
+        train_df = pd.read_csv(train_path)
+        
+        target_col = config.get('data.target_column')
+        X = train_df.drop(target_col, axis=1)
+        y = train_df[target_col]
+        
+        categorical_columns = X.select_dtypes(include=['object']).columns
+        label_encoders = {}
+        
+        for col in categorical_columns:
+            le = LabelEncoder()
+            X[col] = le.fit_transform(X[col])
+            label_encoders[col] = le
+        
+        scaler = StandardScaler()
+        X_scaled = scaler.fit_transform(X)
+        
+        model_params = config.get('model.parameters')
+        model = RandomForestClassifier(**model_params)
+        model.fit(X_scaled, y)
+        
+        for param, value in model_params.items():
+            mlflow.log_param(param, value)
+        
+        y_pred = model.predict(X_scaled)
+        
+        train_accuracy = accuracy_score(y, y_pred)
+        train_precision = precision_score(y, y_pred, pos_label='Yes')
+        train_recall = recall_score(y, y_pred, pos_label='Yes')
+        train_f1 = f1_score(y, y_pred, pos_label='Yes')
+        
+        # regis metrics
+        mlflow.log_metric("train_accuracy", train_accuracy)
+        mlflow.log_metric("train_precision", train_precision)
+        mlflow.log_metric("train_recall", train_recall)
+        mlflow.log_metric("train_f1", train_f1)
+        
+        models_dir = config.get('paths.models_dir')
+        os.makedirs(models_dir, exist_ok=True)
+        
+        with open(f'{models_dir}/churn_prediction_model.pkl', 'wb') as f:
+            pickle.dump(model, f)
+        
+        with open(f'{models_dir}/encoder.pkl', 'wb') as f:
+            pickle.dump(label_encoders, f)
+        
+        with open(f'{models_dir}/scaler.pkl', 'wb') as f:
+            pickle.dump(scaler, f)
+        
 
-# Load the dataset using DVC
-with dvc.api.open('data/Telco_Customer_Churn.csv') as f:
-    df = pd.read_csv(f)
+        mlflow.sklearn.log_model(model, "model")
+        mlflow.log_artifact(f'{models_dir}/encoder.pkl')
+        mlflow.log_artifact(f'{models_dir}/scaler.pkl')
+        
+        metrics_dir = config.get('paths.metrics_dir')
+        os.makedirs(metrics_dir, exist_ok=True)
+        
+        metrics = {
+            'train_accuracy': float(train_accuracy),
+            'train_precision': float(train_precision),
+            'train_recall': float(train_recall),
+            'train_f1': float(train_f1),
+            'training_date': datetime.now().isoformat()
+        }
+        
+        with open(f'{metrics_dir}/train_metrics.json', 'w') as f:
+            json.dump(metrics, f, indent=2)
+        
+        print("Model trained successfully!")
+        print(f"Training Accuracy: {train_accuracy:.4f}")
+        print(f"Training F1-Score: {train_f1:.4f}")
+        
+        return mlflow.active_run().info.run_id
 
-# Data Preprocessing
-df.drop(['customerID'], axis=1, inplace=True)
-df['TotalCharges'] = pd.to_numeric(df['TotalCharges'], errors='coerce')
-df['TotalCharges'] = df['TotalCharges'].fillna(df['TotalCharges'].median())
-
-# Define feature and target
-X = df.drop('Churn', axis=1)
-y = df['Churn'].map({'Yes': 1, 'No': 0})
-
-# Split data for evaluation
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-
-# Define numeric and categorical columns
-numeric_features = X.select_dtypes(include=['number']).columns.tolist()
-categorical_features = X.select_dtypes(include=['object']).columns.tolist()
-
-# Create preprocessing pipelines
-numeric_transformer = StandardScaler()
-categorical_transformer = OneHotEncoder(handle_unknown='ignore')
-
-# Create a preprocessor using ColumnTransformer
-preprocessor = ColumnTransformer(
-    transformers=[
-        ('num', numeric_transformer, numeric_features),
-        ('cat', categorical_transformer, categorical_features)
-    ]
-)
-
-# Combine preprocessor and model into a single pipeline
-model_pipeline = Pipeline(steps=[
-    ('preprocessor', preprocessor),
-    ('classifier', RandomForestClassifier(n_estimators=100, random_state=42))
-])
-
-# Start the MLflow run and train the model inside it
-with mlflow.start_run():
-    # Train the model pipeline
-    model_pipeline.fit(X_train, y_train)
-
-    # Make predictions and evaluate
-    y_pred = model_pipeline.predict(X_test)
-    accuracy = accuracy_score(y_test, y_pred)
-    print(f"✅ Model trained with Accuracy: {accuracy:.4f}")
-
-    # Log parameters and metrics to MLflow
-    mlflow.log_param("n_estimators", 100)
-    mlflow.log_param("random_state", 42)
-    mlflow.log_metric("accuracy", accuracy)
-
-    # Save the model and preprocessors to the 'models' directory
-    os.makedirs('models', exist_ok=True)
-    joblib.dump(model_pipeline['preprocessor'], 'models/preprocessor.pkl')
-    joblib.dump(model_pipeline['classifier'], 'models/churn_prediction_model.pkl')
-    print("✅ Model and Preprocessor saved locally.")
-
-    # Log the entire pipeline as an MLflow artifact
-    mlflow.sklearn.log_model(model_pipeline, "churn_model_pipeline")
-    print("✅ Model pipeline logged to MLflow.")
+if __name__ == "__main__":
+    run_id = train_model()
+    print(f"Run ID: {run_id}")

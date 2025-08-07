@@ -1,0 +1,33 @@
+# Model Parameters
+model:
+  name: "RandomForestClassifier"
+  parameters:
+    n_estimators: 100
+    random_state: 42
+    max_depth: 10
+    min_samples_split: 5
+
+# Data Parameters
+data:
+  test_size: 0.2
+  random_state: 42
+  target_column: "Churn"
+  
+# Training Parameters  
+training:
+  experiment_name: "churn_prediction"
+  model_registry_name: "churn-prediction-model"
+  
+# Monitoring Parameters
+monitoring:
+  reference_data_path: "data/processed/train.csv"
+  current_data_path: "data/processed/test.csv"
+  reports_path: "reports/"
+  
+# Paths
+paths:
+  raw_data: "data/Telco_customer_Churn.csv"
+  processed_train: "data/processed/train.csv"
+  processed_test: "data/processed/test.csv"
+  models_dir: "models/"
+  metrics_dir: "metrics/"
