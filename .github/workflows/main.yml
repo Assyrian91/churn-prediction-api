@@ -31,6 +31,9 @@ jobs:
       - name: Pull DVC files
         run: dvc pull
 
+      - name: Debug file structure
+        run: ls -R
+
       - name: Evaluate model performance
         run: python src/evaluate.py
 
