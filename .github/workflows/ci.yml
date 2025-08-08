@@ -95,7 +95,7 @@ jobs:
       uses: actions/download-artifact@v4
       with:
         name: model-artifacts
-        path: models
+        path: .
     
     - name: Run monitoring checks
       run: |
