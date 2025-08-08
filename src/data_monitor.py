@@ -1,7 +1,7 @@
 import pandas as pd
 import json
-from evidently.utils.data_definition import ColumnMapping
-#from evidently import ColumnMapping
+#from evidently.utils.data_definition import ColumnMapping
+from evidently import ColumnMapping
 from evidently.report import Report
 from evidently.metric_preset import DataDriftPreset, DataQualityPreset
 import os

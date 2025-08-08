@@ -1,2 +1,6 @@
+[core]
+    remote = myremote
 ['remote "local-repo-cache"']
     url = .dvc-cache
+['remote "myremote"']
+    url = E:/dvc_local_storage

@@ -1,0 +1,15 @@
+artifact_uri: file:///C:/Users/HB%20Laptop%20Store/Desktop/churn-mlops-pipeline/mlruns/297840104806523963/1775493ee3a746b38dad70ea5e83f549/artifacts
+end_time: 1754635226346
+entry_point_name: ''
+experiment_id: '297840104806523963'
+lifecycle_stage: active
+run_id: 1775493ee3a746b38dad70ea5e83f549
+run_name: brawny-koi-186
+run_uuid: 1775493ee3a746b38dad70ea5e83f549
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1754635215096
+status: 3
+tags: []
+user_id: HB Laptop Store

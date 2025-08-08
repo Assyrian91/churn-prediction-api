@@ -1,0 +1,6 @@
+artifact_location: file:///C:/Users/HB%20Laptop%20Store/Desktop/churn-mlops-pipeline/mlruns/297840104806523963
+creation_time: 1754635214752
+experiment_id: '297840104806523963'
+last_update_time: 1754635214752
+lifecycle_stage: active
+name: churn_prediction
