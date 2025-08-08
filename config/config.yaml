@@ -29,5 +29,5 @@ paths:
   raw_data: "data/raw/Telco_Customer_Churn.csv"
   processed_train: "data/processed/train.csv"
   processed_test: "data/processed/test.csv"
-  models_dir: "models/"
-  metrics_dir: "metrics/"
+  models_dir: "models"
+  metrics_dir: "metrics"
