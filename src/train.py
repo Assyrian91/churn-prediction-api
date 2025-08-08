@@ -11,6 +11,7 @@ from config_manager import ConfigManager
 from datetime import datetime
 
 def train_model():
+    mlflow.set_tracking_uri("mlruns")
     config = ConfigManager()
     
     # MLflow
