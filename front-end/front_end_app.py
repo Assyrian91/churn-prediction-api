@@ -20,8 +20,8 @@ except FileNotFoundError:
     st.warning("⚠️ Logo not found! Please add 'logo.png' to the 'assets' folder.")
 
 # === 🏷️ App Title ===
-st.title('Customer Churn Prediction API')
-st.markdown("### Predicting Customer Churn using FastAPI and MLOps Pipeline")
+st.title('FutureForecast: AI Churn Prediction')
+st.markdown("### Predicting customer churn before it happens,using FastAPI and MLOps Pipeline")
 
 # === 📝 User Form ===
 with st.form("churn_form"):
