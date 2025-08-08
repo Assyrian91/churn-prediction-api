@@ -7,6 +7,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0 
 
     - name: Set up Python
       uses: actions/setup-python@v4
@@ -17,12 +19,9 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
+        pip install dvc 
 
-    - name: Run data preparation script
-      run: python src/prepare_data.py
-    
-    - name: Run training script
-      run: python src/train.py
-
-    - name: Run evaluate script
-      run: python src/evaluate.py
+    - name: DVC pull and pipeline run
+      run: |
+        dvc pull 
+        dvc repro 
