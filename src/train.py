@@ -11,9 +11,11 @@ from config_manager import ConfigManager
 from datetime import datetime
 
 def train_model():
+    # ADD THIS LINE: This ensures MLflow uses a local folder.
+    mlflow.set_tracking_uri("mlruns")
+    
     config = ConfigManager()
-    mlflow.set_tracking_uri("file:" + os.path.abspath("mlruns"))
-
+    
     # MLflow
     experiment_name = config.get('training.experiment_name')
     mlflow.set_experiment(experiment_name)
@@ -73,7 +75,11 @@ def train_model():
             pickle.dump(scaler, f)
         
 
-        mlflow.sklearn.log_model(model, "model")
+        # REMOVE THIS LINE: هذا السطر يسبب المشكلة
+        # mlflow.sklearn.log_model(model, "model")
+        
+        # FINAL FIX: بدلاً من ذلك، نقوم بتسجيل الملفات كـ artifacts
+        mlflow.log_artifact(f'{models_dir}/churn_prediction_model.pkl')
         mlflow.log_artifact(f'{models_dir}/encoder.pkl')
         mlflow.log_artifact(f'{models_dir}/scaler.pkl')
         
