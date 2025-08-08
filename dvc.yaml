@@ -1,0 +1,17 @@
+stages:
+  prepare_data:
+    cmd: python src/prepare_data.py
+    deps:
+    - data/raw/Telco_Customer_Churn.csv
+    outs:
+    - data/processed/test.csv
+    - data/processed/train.csv
+    - models/preprocessor.pkl
+  train:
+    cmd: python src/train.py
+    deps:
+    - data/processed/train.csv
+    - models/preprocessor.pkl
+    - src/train.py
+    metrics:
+    - metrics/train_metrics.json
