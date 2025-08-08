@@ -28,7 +28,7 @@ jobs:
       run: |
         python -c "
         import pandas as pd
-        df = pd.read_csv('data/Telco_customer_Churn.csv')
+        df = pd.read_csv('data/raw/Telco_customer_Churn.csv')
         assert 'Churn' in df.columns, 'Target column missing'
         assert len(df) > 1000, 'Insufficient data'
         print('Data validation passed!')
