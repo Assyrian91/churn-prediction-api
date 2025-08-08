@@ -52,7 +52,7 @@ with st.form("churn_form"):
 
 if submitted:
     data = {
-        "customerID": customer_id,
+       # "customerID": customer_id,
         "gender": gender,
         "SeniorCitizen": senior_citizen,
         "Partner": partner,
