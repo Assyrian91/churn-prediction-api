@@ -1,2 +1,2 @@
 [server]
-folderWatchBlacklist = ["venv", ".git", "models", "data"] 
+folderWatchBlacklist = ["venv", ".git", "models", "data", "__pycache__", "churn-prediction-api"]
