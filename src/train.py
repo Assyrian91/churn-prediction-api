@@ -12,7 +12,8 @@ from datetime import datetime
 
 def train_model():
     config = ConfigManager()
-    
+    mlflow.set_tracking_uri("file:" + os.path.abspath("mlruns"))
+
     # MLflow
     experiment_name = config.get('training.experiment_name')
     mlflow.set_experiment(experiment_name)
