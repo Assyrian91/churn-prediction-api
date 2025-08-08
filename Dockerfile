@@ -13,8 +13,12 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy the entire application code into the container
 COPY . .
 
+# Run the data preparation and training scripts to create the model artifact
+RUN python src/prepare_data.py
+RUN python src/train.py
+
 # Expose the port on which the app will run
 EXPOSE 8000
 
 # Run the API with Uvicorn, and make it accessible from outside the container
-CMD ["uvicorn", "src.predict:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "src.predict:app", "--host", "0.0.0.0", "--port", "8000"] 
