@@ -37,6 +37,8 @@ jobs:
   model-training:
     needs: data-validation
     runs-on: ubuntu-latest
+    env:
+      MLFLOW_TRACKING_URI: ./mlruns
     steps:
     - uses: actions/checkout@v3
     
