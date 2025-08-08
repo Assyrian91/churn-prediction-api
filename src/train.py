@@ -1,27 +1,16 @@
-import pandas as pd
-import pickle
-import json
-import os
-import mlflow
-import mlflow.sklearn
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.preprocessing import LabelEncoder, StandardScaler
-from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
-from config_manager import ConfigManager
-from datetime import datetime
-
 def train_model():
-    # ADD THIS LINE: This ensures MLflow uses a local folder.
-    mlflow.set_tracking_uri("mlruns")
-    
     config = ConfigManager()
     
-    # MLflow
+    # هنا نحدد المسار المحلي للـ MLflow حتى يشتغل على ويندوز و لينكس
+    tracking_path = os.path.abspath("mlruns")
+    os.makedirs(tracking_path, exist_ok=True)
+    mlflow.set_tracking_uri(f"file://{tracking_path}")
+
+    # MLflow experiment
     experiment_name = config.get('training.experiment_name')
     mlflow.set_experiment(experiment_name)
     
     with mlflow.start_run():
-        
         mlflow.log_param("training_date", datetime.now().isoformat())
         
         train_path = config.get('paths.processed_train')
@@ -56,7 +45,7 @@ def train_model():
         train_recall = recall_score(y, y_pred, pos_label='Yes')
         train_f1 = f1_score(y, y_pred, pos_label='Yes')
         
-        # regis metrics
+        # log metrics
         mlflow.log_metric("train_accuracy", train_accuracy)
         mlflow.log_metric("train_precision", train_precision)
         mlflow.log_metric("train_recall", train_recall)
@@ -74,12 +63,7 @@ def train_model():
         with open(f'{models_dir}/scaler.pkl', 'wb') as f:
             pickle.dump(scaler, f)
         
-
-        # REMOVE THIS LINE: هذا السطر يسبب المشكلة
-        # mlflow.sklearn.log_model(model, "model")
-        
-        # FINAL FIX: بدلاً من ذلك، نقوم بتسجيل الملفات كـ artifacts
-        mlflow.log_artifact(f'{models_dir}/churn_prediction_model.pkl')
+        mlflow.sklearn.log_model(model, "model")
         mlflow.log_artifact(f'{models_dir}/encoder.pkl')
         mlflow.log_artifact(f'{models_dir}/scaler.pkl')
         
@@ -102,7 +86,3 @@ def train_model():
         print(f"Training F1-Score: {train_f1:.4f}")
         
         return mlflow.active_run().info.run_id
-
-if __name__ == "__main__":
-    run_id = train_model()
-    print(f"Run ID: {run_id}")
