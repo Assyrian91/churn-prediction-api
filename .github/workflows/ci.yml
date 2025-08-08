@@ -102,7 +102,7 @@ jobs:
         python src/data_monitor.py
     
     - name: Upload monitoring reports
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: monitoring-reports
         path: reports/
