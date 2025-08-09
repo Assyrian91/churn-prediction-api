@@ -10,6 +10,9 @@ COPY front-end/requirements.txt .
 # Install any needed packages specified in requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
 
+# Pull DVC data
+RUN dvc pull
+
 # Copy the rest of the application's code
 COPY front-end/front_end_app.py .
 
