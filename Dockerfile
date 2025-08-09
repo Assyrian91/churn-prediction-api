@@ -4,21 +4,17 @@ FROM python:3.9-slim
 # Set the working directory in the container
 WORKDIR /app
 
-# Copy the requirements file into the container
-COPY requirements.txt .
+# Copy the requirements file into the container at /app
+COPY front-end/requirements.txt .
 
-# Install the dependencies
+# Install any needed packages specified in requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy the entire application code into the container
-COPY . .
-
-# Run the data preparation and training scripts to create the model artifact
-RUN python src/prepare_data.py
-RUN python src/train.py
+# Copy the rest of the application's code
+COPY front-end/front_end_app.py .
 
 # Expose the port on which the app will run
-EXPOSE 8000
+EXPOSE 8050
 
-# Run the API with Uvicorn, and make it accessible from outside the container
-CMD ["uvicorn", "src.predict:app", "--host", "0.0.0.0", "--port", "8000"] 
+# Define the command to run the application
+CMD ["python", "front_end_app.py"]

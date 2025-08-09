@@ -1,56 +1,192 @@
-import streamlit as st
+import dash
+from dash import dcc, html
+from dash.dependencies import Input, Output, State
 import requests
-from PIL import Image
+import base64
+import os
 
-# This code is essential for the styling changes we discussed
-try:
-    with open('.streamlit/style.css') as f:
-        st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
-except FileNotFoundError:
-    st.warning("⚠️ CSS file not found! Please create a '.streamlit/style.css' file.")
-# === 🔗 API Endpoint ===
 API_URL = "https://churn-prediction-api-9lrl.onrender.com/predict"
 
-# === 🖼️ Add logo ===
-# Replace 'logo.png' with your actual logo filename
-try:
-    logo = Image.open("assets/logo.jpeg")
-    st.image(logo, width=200)
-except FileNotFoundError:
-    st.warning("⚠️ Logo not found! Please add 'logo.png' to the 'assets' folder.")
+# قراءة وعرض اللوجو بصيغة base64
+logo_path = "assets/logo.jpeg"
+if os.path.exists(logo_path):
+    encoded_logo = base64.b64encode(open(logo_path, 'rb').read()).decode()
+    logo_component = html.Img(src='data:image/jpeg;base64,{}'.format(encoded_logo), style={'width': '200px'})
+else:
+    logo_component = html.Div("⚠️ Logo not found! Please add 'logo.jpeg' to the 'assets' folder.", style={'color': 'red'})
 
-# === 🏷️ App Title ===
-st.title('FutureForecast: AI Churn Prediction')
-st.markdown("### Predicting customer churn before it happens,using FastAPI and MLOps Pipeline")
+app = dash.Dash(__name__)
 
-# === 📝 User Form ===
-with st.form("churn_form"):
-    st.header("Customer Information")
+app.layout = html.Div([
+    logo_component,
+    html.H1('FutureForecast: AI Churn Prediction'),
+    html.H3("Predicting customer churn before it happens, using FastAPI and MLOps Pipeline"),
 
-    customer_id = st.text_input("Customer ID", value="123456")
-    gender = st.selectbox("Gender", ["Male", "Female"])
-    senior_citizen = st.selectbox("Senior Citizen", [0, 1])
-    partner = st.selectbox("Partner", ["Yes", "No"])
-    dependents = st.selectbox("Dependents", ["Yes", "No"])
-    tenure = st.slider("Tenure (in months)", 0, 72, 24)
-    phone_service = st.selectbox("Phone Service", ["Yes", "No"])
-    multiple_lines = st.selectbox("Multiple Lines", ["No", "Yes", "No phone service"])
-    internet_service = st.selectbox("Internet Service", ["DSL", "Fiber optic", "No"])
-    online_security = st.selectbox("Online Security", ["No", "Yes", "No internet service"])
-    online_backup = st.selectbox("Online Backup", ["No", "Yes", "No internet service"])
-    device_protection = st.selectbox("Device Protection", ["No", "Yes", "No internet service"])
-    tech_support = st.selectbox("Tech Support", ["No", "Yes", "No internet service"])
-    streaming_tv = st.selectbox("Streaming TV", ["No", "Yes", "No internet service"])
-    streaming_movies = st.selectbox("Streaming Movies", ["No", "Yes", "No internet service"])
-    contract = st.selectbox("Contract", ["Month-to-month", "One year", "Two year"])
-    paperless_billing = st.selectbox("Paperless Billing", ["Yes", "No"])
-    payment_method = st.selectbox("Payment Method", ["Electronic check", "Mailed check", "Bank transfer (automatic)", "Credit card (automatic)"])
-    monthly_charges = st.number_input("Monthly Charges", value=84.85)
-    total_charges = st.number_input("Total Charges", value=1990.50)
+    html.H4("Customer Information"),
 
-    submitted = st.form_submit_button("Predict Churn")
+    html.Label("Customer ID"),
+    dcc.Input(id='customer_id', type='text', value='123456', style={'width': '100%'}),
 
-if submitted:
+    html.Label("Gender"),
+    dcc.Dropdown(id='gender', options=[
+        {'label': 'Male', 'value': 'Male'},
+        {'label': 'Female', 'value': 'Female'}
+    ], value='Male'),
+
+    html.Label("Senior Citizen"),
+    dcc.Dropdown(id='senior_citizen', options=[
+        {'label': '0', 'value': 0},
+        {'label': '1', 'value': 1}
+    ], value=0),
+
+    html.Label("Partner"),
+    dcc.Dropdown(id='partner', options=[
+        {'label': 'Yes', 'value': 'Yes'},
+        {'label': 'No', 'value': 'No'}
+    ], value='Yes'),
+
+    html.Label("Dependents"),
+    dcc.Dropdown(id='dependents', options=[
+        {'label': 'Yes', 'value': 'Yes'},
+        {'label': 'No', 'value': 'No'}
+    ], value='No'),
+
+    html.Label("Tenure (in months)"),
+    dcc.Slider(id='tenure', min=0, max=72, step=1, value=24,
+               marks={i: str(i) for i in range(0, 73, 12)}),
+
+    html.Label("Phone Service"),
+    dcc.Dropdown(id='phone_service', options=[
+        {'label': 'Yes', 'value': 'Yes'},
+        {'label': 'No', 'value': 'No'}
+    ], value='Yes'),
+
+    html.Label("Multiple Lines"),
+    dcc.Dropdown(id='multiple_lines', options=[
+        {'label': 'No', 'value': 'No'},
+        {'label': 'Yes', 'value': 'Yes'},
+        {'label': 'No phone service', 'value': 'No phone service'}
+    ], value='No'),
+
+    html.Label("Internet Service"),
+    dcc.Dropdown(id='internet_service', options=[
+        {'label': 'DSL', 'value': 'DSL'},
+        {'label': 'Fiber optic', 'value': 'Fiber optic'},
+        {'label': 'No', 'value': 'No'}
+    ], value='DSL'),
+
+    html.Label("Online Security"),
+    dcc.Dropdown(id='online_security', options=[
+        {'label': 'No', 'value': 'No'},
+        {'label': 'Yes', 'value': 'Yes'},
+        {'label': 'No internet service', 'value': 'No internet service'}
+    ], value='No'),
+
+    html.Label("Online Backup"),
+    dcc.Dropdown(id='online_backup', options=[
+        {'label': 'No', 'value': 'No'},
+        {'label': 'Yes', 'value': 'Yes'},
+        {'label': 'No internet service', 'value': 'No internet service'}
+    ], value='No'),
+
+    html.Label("Device Protection"),
+    dcc.Dropdown(id='device_protection', options=[
+        {'label': 'No', 'value': 'No'},
+        {'label': 'Yes', 'value': 'Yes'},
+        {'label': 'No internet service', 'value': 'No internet service'}
+    ], value='No'),
+
+    html.Label("Tech Support"),
+    dcc.Dropdown(id='tech_support', options=[
+        {'label': 'No', 'value': 'No'},
+        {'label': 'Yes', 'value': 'Yes'},
+        {'label': 'No internet service', 'value': 'No internet service'}
+    ], value='No'),
+
+    html.Label("Streaming TV"),
+    dcc.Dropdown(id='streaming_tv', options=[
+        {'label': 'No', 'value': 'No'},
+        {'label': 'Yes', 'value': 'Yes'},
+        {'label': 'No internet service', 'value': 'No internet service'}
+    ], value='No'),
+
+    html.Label("Streaming Movies"),
+    dcc.Dropdown(id='streaming_movies', options=[
+        {'label': 'No', 'value': 'No'},
+        {'label': 'Yes', 'value': 'Yes'},
+        {'label': 'No internet service', 'value': 'No internet service'}
+    ], value='No'),
+
+    html.Label("Contract"),
+    dcc.Dropdown(id='contract', options=[
+        {'label': 'Month-to-month', 'value': 'Month-to-month'},
+        {'label': 'One year', 'value': 'One year'},
+        {'label': 'Two year', 'value': 'Two year'}
+    ], value='Month-to-month'),
+
+    html.Label("Paperless Billing"),
+    dcc.Dropdown(id='paperless_billing', options=[
+        {'label': 'Yes', 'value': 'Yes'},
+        {'label': 'No', 'value': 'No'}
+    ], value='Yes'),
+
+    html.Label("Payment Method"),
+    dcc.Dropdown(id='payment_method', options=[
+        {'label': 'Electronic check', 'value': 'Electronic check'},
+        {'label': 'Mailed check', 'value': 'Mailed check'},
+        {'label': 'Bank transfer (automatic)', 'value': 'Bank transfer (automatic)'},
+        {'label': 'Credit card (automatic)', 'value': 'Credit card (automatic)'}
+    ], value='Electronic check'),
+
+    html.Label("Monthly Charges"),
+    dcc.Input(id='monthly_charges', type='number', value=84.85, step=0.01),
+
+    html.Label("Total Charges"),
+    dcc.Input(id='total_charges', type='number', value=1990.50, step=0.01),
+
+    html.Br(),
+    html.Button('Predict Churn', id='submit_button'),
+
+    html.Hr(),
+
+    html.Div(id='output_div'),
+
+    html.Hr(),
+    html.Div("Built by Khoshaba Odeesho", style={'textAlign': 'center', 'marginTop': '20px'})
+])
+
+
+@app.callback(
+    Output('output_div', 'children'),
+    Input('submit_button', 'n_clicks'),
+    State('customer_id', 'value'),
+    State('gender', 'value'),
+    State('senior_citizen', 'value'),
+    State('partner', 'value'),
+    State('dependents', 'value'),
+    State('tenure', 'value'),
+    State('phone_service', 'value'),
+    State('multiple_lines', 'value'),
+    State('internet_service', 'value'),
+    State('online_security', 'value'),
+    State('online_backup', 'value'),
+    State('device_protection', 'value'),
+    State('tech_support', 'value'),
+    State('streaming_tv', 'value'),
+    State('streaming_movies', 'value'),
+    State('contract', 'value'),
+    State('paperless_billing', 'value'),
+    State('payment_method', 'value'),
+    State('monthly_charges', 'value'),
+    State('total_charges', 'value')
+)
+def predict_churn(n_clicks, customer_id, gender, senior_citizen, partner, dependents, tenure, phone_service,
+                  multiple_lines, internet_service, online_security, online_backup, device_protection, tech_support,
+                  streaming_tv, streaming_movies, contract, paperless_billing, payment_method, monthly_charges,
+                  total_charges):
+    if not n_clicks:
+        return ""
+
     data = {
         "customerID": customer_id,
         "gender": gender,
@@ -76,19 +212,20 @@ if submitted:
 
     try:
         response = requests.post(API_URL, json=data)
-
         if response.status_code == 200:
             result = response.json()
-            st.success(f"Prediction Result: {result['prediction']}")
-            st.metric("Churn Risk", f"{result['churn_risk_percent']}%")
-            st.metric("Confidence", f"{result['confidence_percent']}%")
-            st.write(f"**Will Churn:** {'Yes' if result['will_churn'] else 'No'}")
-            st.write(f"**Risk Level:** {result['risk_level']}")
-            st.write(f"**Confidence:** {result['confidence_percent']}%")
+            return html.Div([
+                html.H4(f"Prediction Result: {result.get('prediction', 'N/A')}"),
+                html.Div(f"Churn Risk: {result.get('churn_risk_percent', 'N/A')}%"),
+                html.Div(f"Confidence: {result.get('confidence_percent', 'N/A')}%"),
+                html.Div(f"Will Churn: {'Yes' if result.get('will_churn', False) else 'No'}"),
+                html.Div(f"Risk Level: {result.get('risk_level', 'N/A')}"),
+            ])
         else:
-            st.error(f"Error from API: {response.status_code} - {response.text}")
+            return html.Div(f"Error from API: {response.status_code} - {response.text}", style={'color': 'red'})
     except requests.exceptions.RequestException as e:
-        st.error(f"Connection error: {e}")
+        return html.Div(f"Connection error: {e}", style={'color': 'red'})
 
-st.markdown("---")
-st.markdown("Built by Khoshaba Odeesho")
+
+if __name__ == '__main__':
+    app.run(debug=True)

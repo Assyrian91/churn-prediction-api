@@ -114,6 +114,6 @@ app = FastAPI(
 
 @app.post("/predict")
 def predict_churn_api(customer_data: CustomerData):
-    customer_dict = customer_data.model_dump()
+    customer_dict = customer_data.dict()
     result = predict_churn(customer_dict)
     return result
