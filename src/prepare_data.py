@@ -1,87 +1,65 @@
 import pandas as pd
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import StandardScaler, OneHotEncoder
 from sklearn.compose import ColumnTransformer
-from config_manager import ConfigManager
-import os
+from sklearn.preprocessing import OneHotEncoder, StandardScaler
+from dvc.api import DVCFileSystem
 import joblib
+import os
 
-def prepare_data():
-    """Load raw data, split, preprocess, and save preprocessor and data."""
-    # Load configuration
-    config = ConfigManager()
+def load_data():
+    fs = DVCFileSystem()
+    path = fs.open('data/raw/Telco_Customer_Churn.csv', mode='rb')
+    df = pd.read_csv(path)
+    return df
 
-    # Define file paths from config
-    raw_data_path = config.get('paths.raw_data')
-    processed_train_path = config.get('paths.processed_train')
-    processed_test_path = config.get('paths.processed_test')
-    models_dir = config.get('paths.models_dir')
-    preprocessor_path = os.path.join(models_dir, 'preprocessor.pkl')
-
-    # Create directories if they don't exist
-    os.makedirs(os.path.dirname(processed_train_path), exist_ok=True)
-    os.makedirs(models_dir, exist_ok=True)
-
-    # Read the raw data file
-    try:
-        df = pd.read_csv(raw_data_path)
-    except FileNotFoundError:
-        print(f"Error: Raw data file not found at {raw_data_path}. Please make sure it exists.")
-        return
-
-    # Handle 'TotalCharges' column
+def preprocess_data(df):
     df['TotalCharges'] = pd.to_numeric(df['TotalCharges'], errors='coerce')
     df.dropna(inplace=True)
-    df = df.reset_index(drop=True)
-    
-    # Handle 'SeniorCitizen' column
-    df['SeniorCitizen'] = df['SeniorCitizen'].astype(str)
+    df.drop(columns=['customerID'], inplace=True)
+    df['Churn'] = df['Churn'].map({'Yes': 1, 'No': 0})
 
-    # Drop 'customerID'
-    df = df.drop('customerID', axis=1)
+    X = df.drop(columns=['Churn'])
+    y = df['Churn']
 
-    # Define features and target
-    target_column = config.get('data.target_column')
-    features = df.drop(columns=target_column).columns.tolist()
+    categorical_features = X.select_dtypes(include=['object']).columns.tolist()
+    numerical_features = X.select_dtypes(include=['int64', 'float64']).columns.tolist()
 
-    # Split data into train and test sets
-    test_size = config.get('data.test_size')
-    random_state = config.get('data.random_state')
-    
-    train_df, test_df = train_test_split(
-        df,
-        test_size=test_size,
-        random_state=random_state,
-        stratify=df[target_column]
-    )
-
-    # Define preprocessing steps
-    categorical_features = train_df.select_dtypes(include=['object']).drop(columns=[target_column], errors='ignore').columns.tolist()
-    numerical_features = train_df.select_dtypes(include=['int64', 'float64']).columns.tolist()
-
-    numeric_transformer = StandardScaler()
-    categorical_transformer = OneHotEncoder(handle_unknown='ignore')
-    
     preprocessor = ColumnTransformer(
         transformers=[
-            ('num', numeric_transformer, numerical_features),
-            ('cat', categorical_transformer, categorical_features)
-        ])
+            ('num', StandardScaler(), numerical_features),
+            ('cat', OneHotEncoder(handle_unknown='ignore'), categorical_features)
+        ],
+        remainder='passthrough'
+    )
 
-    # Fit the preprocessor on the training data
-    preprocessor.fit(train_df[features])
+    preprocessor.fit(X)
+    X_processed = preprocessor.transform(X)
 
-    # Save the fitted preprocessor
-    joblib.dump(preprocessor, preprocessor_path)
+    feature_names = preprocessor.get_feature_names_out()
+    processed_df = pd.DataFrame(X_processed, columns=feature_names)
+    processed_df['Churn'] = y.reset_index(drop=True)
 
-    # Save the processed data
-    train_df.to_csv(processed_train_path, index=False)
-    test_df.to_csv(processed_test_path, index=False)
+    return processed_df, preprocessor
 
-    print(f"Data prepared successfully!")
-    print(f"Preprocessor saved to: {preprocessor_path}")
-    print(f"Train data saved to: {processed_train_path}")
-    print(f"Test data saved to: {processed_test_path}")
+def save_artifacts(processed_df, preprocessor):
+    os.makedirs('models', exist_ok=True)
+    os.makedirs('data/processed', exist_ok=True)
+
+    joblib.dump(preprocessor, 'models/preprocessor.pkl')
+
+    train_df, test_df = train_test_split(processed_df, test_size=0.2, random_state=42)
+    train_df.to_csv('data/processed/train.csv', index=False)
+    test_df.to_csv('data/processed/test.csv', index=False)
+
+    print("Data prepared successfully!")
+    print(f"Preprocessor saved to: models/preprocessor.pkl")
+    print(f"Train data saved to: data/processed/train.csv")
+    print(f"Test data saved to: data/processed/test.csv")
+
+def main():
+    df = load_data()
+    processed_df, preprocessor = preprocess_data(df)
+    save_artifacts(processed_df, preprocessor)
 
 if __name__ == "__main__":
-    prepare_data()
+    main()

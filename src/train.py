@@ -1,88 +1,78 @@
-def train_model():
-    config = ConfigManager()
-    
-    # هنا نحدد المسار المحلي للـ MLflow حتى يشتغل على ويندوز و لينكس
-    tracking_path = os.path.abspath("mlruns")
-    os.makedirs(tracking_path, exist_ok=True)
-    mlflow.set_tracking_uri(f"file://{tracking_path}")
+import pandas as pd
+import joblib
+import json
+import os
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
 
-    # MLflow experiment
-    experiment_name = config.get('training.experiment_name')
-    mlflow.set_experiment(experiment_name)
-    
-    with mlflow.start_run():
-        mlflow.log_param("training_date", datetime.now().isoformat())
-        
-        train_path = config.get('paths.processed_train')
-        train_df = pd.read_csv(train_path)
-        
-        target_col = config.get('data.target_column')
-        X = train_df.drop(target_col, axis=1)
-        y = train_df[target_col]
-        
-        categorical_columns = X.select_dtypes(include=['object']).columns
-        label_encoders = {}
-        
-        for col in categorical_columns:
-            le = LabelEncoder()
-            X[col] = le.fit_transform(X[col])
-            label_encoders[col] = le
-        
-        scaler = StandardScaler()
-        X_scaled = scaler.fit_transform(X)
-        
-        model_params = config.get('model.parameters')
-        model = RandomForestClassifier(**model_params)
-        model.fit(X_scaled, y)
-        
-        for param, value in model_params.items():
-            mlflow.log_param(param, value)
-        
-        y_pred = model.predict(X_scaled)
-        
-        train_accuracy = accuracy_score(y, y_pred)
-        train_precision = precision_score(y, y_pred, pos_label='Yes')
-        train_recall = recall_score(y, y_pred, pos_label='Yes')
-        train_f1 = f1_score(y, y_pred, pos_label='Yes')
-        
-        # log metrics
-        mlflow.log_metric("train_accuracy", train_accuracy)
-        mlflow.log_metric("train_precision", train_precision)
-        mlflow.log_metric("train_recall", train_recall)
-        mlflow.log_metric("train_f1", train_f1)
-        
-        models_dir = config.get('paths.models_dir')
-        os.makedirs(models_dir, exist_ok=True)
-        
-        with open(f'{models_dir}/churn_prediction_model.pkl', 'wb') as f:
-            pickle.dump(model, f)
-        
-        with open(f'{models_dir}/encoder.pkl', 'wb') as f:
-            pickle.dump(label_encoders, f)
-        
-        with open(f'{models_dir}/scaler.pkl', 'wb') as f:
-            pickle.dump(scaler, f)
-        
-        mlflow.sklearn.log_model(model, "model")
-        mlflow.log_artifact(f'{models_dir}/encoder.pkl')
-        mlflow.log_artifact(f'{models_dir}/scaler.pkl')
-        
-        metrics_dir = config.get('paths.metrics_dir')
-        os.makedirs(metrics_dir, exist_ok=True)
-        
-        metrics = {
-            'train_accuracy': float(train_accuracy),
-            'train_precision': float(train_precision),
-            'train_recall': float(train_recall),
-            'train_f1': float(train_f1),
-            'training_date': datetime.now().isoformat()
-        }
-        
-        with open(f'{metrics_dir}/train_metrics.json', 'w') as f:
-            json.dump(metrics, f, indent=2)
-        
-        print("Model trained successfully!")
-        print(f"Training Accuracy: {train_accuracy:.4f}")
-        print(f"Training F1-Score: {train_f1:.4f}")
-        
-        return mlflow.active_run().info.run_id
+# =========================
+# Load data
+# =========================
+
+def load_data():
+    """Loads preprocessed data."""
+    train_df = pd.read_csv("data/processed/train.csv")
+    test_df = pd.read_csv("data/processed/test.csv")
+    return train_df, test_df
+
+# =========================
+# Train model
+# =========================
+
+def train_model(train_df):
+    """Trains a Logistic Regression model."""
+    X_train = train_df.drop(columns=['Churn'])
+    y_train = train_df['Churn']
+
+    model = LogisticRegression(random_state=42, solver='liblinear')
+    model.fit(X_train, y_train)
+    return model
+
+# =========================
+# Evaluate model
+# =========================
+
+def evaluate_model(model, test_df):
+    """Evaluates the model on test data."""
+    X_test = test_df.drop(columns=['Churn'])
+    y_test = test_df['Churn']
+
+    y_pred = model.predict(X_test)
+
+    accuracy = accuracy_score(y_test, y_pred)
+    precision = precision_score(y_test, y_pred)
+    recall = recall_score(y_test, y_pred)
+    f1 = f1_score(y_test, y_pred)
+
+    metrics = {
+        'accuracy': float(accuracy),
+        'precision': float(precision),
+        'recall': float(recall),
+        'f1_score': float(f1)
+    }
+    return metrics
+
+# =========================
+# Save artifacts and metrics
+# =========================
+
+def save_artifacts(model, metrics):
+    """Saves the trained model and metrics."""
+    os.makedirs('models', exist_ok=True)
+    os.makedirs('metrics', exist_ok=True)
+
+    joblib.dump(model, 'models/churn_prediction_model.pkl')
+
+    with open('metrics/train_metrics.json', 'w') as f:
+        json.dump(metrics, f, indent=4)
+
+def main():
+    """Main function to run the training pipeline."""
+    train_df, test_df = load_data()
+    model = train_model(train_df)
+    metrics = evaluate_model(model, test_df)
+    save_artifacts(model, metrics)
+    print("Model trained and evaluated successfully!")
+
+if __name__ == "__main__":
+    main()
