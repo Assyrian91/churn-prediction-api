@@ -5,7 +5,8 @@ import requests
 import base64
 import os
 
-API_URL = "https://churn-prediction-api-9lrl.onrender.com/predict"
+#API_URL = "https://churn-prediction-api-9lrl.onrender.com/predict"
+API_URL = "http://127.0.0.1:8000/predict"
 
 logo_path = "assets/logo.jpeg"
 if os.path.exists(logo_path):
@@ -227,6 +228,5 @@ def predict_churn(n_clicks, customer_id, gender, senior_citizen, partner, depend
 
 
 if __name__ == "__main__":
-    import os
     port = int(os.environ.get("PORT", 8000))
-    app.run(host="0.0.0.0", port=port, debug=True)
+    app.run(host="0.0.0.0", port=8050, debug=True)
