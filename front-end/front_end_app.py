@@ -7,7 +7,6 @@ import os
 
 API_URL = "https://churn-prediction-api-9lrl.onrender.com/predict"
 
-# قراءة وعرض اللوجو بصيغة base64
 logo_path = "assets/logo.jpeg"
 if os.path.exists(logo_path):
     encoded_logo = base64.b64encode(open(logo_path, 'rb').read()).decode()
@@ -139,10 +138,10 @@ app.layout = html.Div([
     ], value='Electronic check'),
 
     html.Label("Monthly Charges"),
-    dcc.Input(id='monthly_charges', type='number', value=84.85, step=0.01),
+    dcc.Input(id='monthly_charges', type='number', value=84.85, step=0.10),
 
     html.Label("Total Charges"),
-    dcc.Input(id='total_charges', type='number', value=1990.50, step=0.01),
+    dcc.Input(id='total_charges', type='number', value=1990.50, step=0.10),
 
     html.Br(),
     html.Button('Predict Churn', id='submit_button'),
@@ -227,5 +226,7 @@ def predict_churn(n_clicks, customer_id, gender, senior_citizen, partner, depend
         return html.Div(f"Connection error: {e}", style={'color': 'red'})
 
 
-if __name__ == '__main__':
-    app.run(debug=True)
+if __name__ == "__main__":
+    import os
+    port = int(os.environ.get("PORT", 8000))
+    app.run(host="0.0.0.0", port=port, debug=True)
