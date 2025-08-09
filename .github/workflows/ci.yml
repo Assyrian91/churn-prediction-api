@@ -90,7 +90,13 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
-    
+    # This is the new step to pull DVC data
+   - name: Pull DVC data
+     run: dvc pull
+
+   - name: Run DVC pipeline
+     run: dvc repro
+
     - name: Download model artifacts
       uses: actions/download-artifact@v4
       with:
