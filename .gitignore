@@ -1,7 +1,26 @@
-*.log
-*.json
+# Virtual environment
+venv/
+.venv/
+myenv/
+
+# DVC cache and configuration
+.dvc/cache/
+.dvc/tmp/
+.dvc/plots/
+.dvc/
+dvc.lock
+
+# MLflow artifacts
+mlruns/
+
+# Python-specific
 __pycache__/
-/models/
-data/raw/Telco_Customer_Churn.csv
-data/processed/train.csv
-data/processed/test.csv
+*.pyc
+.ipynb_checkpoints/
+
+# Other
+.DS_Store
+
+# Data and models (DVC tracked)
+data/
+models/
