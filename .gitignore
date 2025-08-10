@@ -1,26 +1,6 @@
-# Virtual environment
-venv/
-.venv/
+# DVC
+.dvc/cache
+
+
+# Python
 myenv/
-
-# DVC cache and configuration
-.dvc/cache/
-.dvc/tmp/
-.dvc/plots/
-.dvc/
-dvc.lock
-
-# MLflow artifacts
-mlruns/
-
-# Python-specific
-__pycache__/
-*.pyc
-.ipynb_checkpoints/
-
-# Other
-.DS_Store
-
-# Data and models (DVC tracked)
-data/
-models/
