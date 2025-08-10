@@ -39,6 +39,7 @@ assert 'Churn' in df.columns, 'Target column missing'
 assert len(df) > 1000, 'Insufficient data'
 print('Data validation passed!')
 "
+"
 
   model-training:
     needs: data-validation
