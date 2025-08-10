@@ -1,0 +1,1 @@
+2025-08-05 12:30:52,744 - Prediction for customer TEST001: {'customer_id': 'unknown', 'churn_probability': 0.400366948500674, 'will_churn': False, 'risk_level': 'MEDIUM', 'confidence': 0.599633051499326, 'status': 'success'}

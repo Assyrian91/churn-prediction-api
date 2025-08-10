@@ -1,6 +1,4 @@
 [core]
-    remote = gdrive_remote
-['remote "gdrive_remote"']
-    url = gdrive://1wjavduGGQ5BmVBm0GNS8LfH-EPT_FsPP
-    gdrive_use_service_account = true
-    gdrive_service_account_json_file_path = C:\Users\HB Laptop Store\Desktop\churn-mlops-pipeline\dvc-sa.json
+    remote = s3-remote
+['remote "s3-remote"']
+    url = s3://Churn-prediction-pipeline-khoshaba/

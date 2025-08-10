@@ -1,126 +1,135 @@
-name: CI Pipeline
+name: MLOps Pipeline
 
 on:
   push:
     branches: [ main, develop ]
   pull_request:
     branches: [ main ]
-  schedule:
-    - cron: '0 2 * * *'
+
+env:
+  PYTHON_VERSION: '3.9'
 
 jobs:
-  data-validation:
+  # مرحلة الاختبارات الأساسية
+  test:
     runs-on: ubuntu-latest
-    env:
-      GOOGLE_APPLICATION_CREDENTIALS: ${{ github.workspace }}/dvc-sa.json
+    
     steps:
-    - uses: actions/checkout@v3
-    
-    - name: Install DVC with GDrive support
-      run: pip install "dvc[gdrive]"
-    
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
-
-    - name: Setup Google credentials
-      run: echo "${{ secrets.GOOGLE_APPLICATION_CREDENTIALS_DATA }}" > dvc-sa.json
-    
-    - name: Pull DVC data
-      run: dvc pull
-    
-    - name: Validate data schema
-      run: |
-        python -c "
-import pandas as pd
-df = pd.read_csv('data/raw/Telco_Customer_Churn.csv')
-assert 'Churn' in df.columns, 'Target column missing'
-assert len(df) > 1000, 'Insufficient data'
-print('Data validation passed!')
-"
-  model-training:
-    needs: data-validation
-    runs-on: ubuntu-latest
-    env:
-      GOOGLE_APPLICATION_CREDENTIALS: ${{ github.workspace }}/dvc-sa.json
-      MLFLOW_TRACKING_URI: ./mlruns
-    steps:
-    - uses: actions/checkout@v3
-    
-    - name: Install DVC with GDrive support
-      run: pip install "dvc[gdrive]"
-    
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
-    - name: Setup Google credentials
-      run: echo "${{ secrets.GOOGLE_APPLICATION_CREDENTIALS_DATA }}" > dvc-sa.json
-    
-    - name: Pull DVC data
-      run: dvc pull
-
-    - name: Create config directory
-      run: mkdir -p config
-    
-    - name: Prepare data
-      run: python src/prepare_data.py
-    
-    - name: Train model
-      run: python src/train.py
-    
-    - name: Register model
-      run: python src/model_registry.py
-    
-    - name: Evaluate model
-      run: python src/evaluate.py
-    
-    - name: Upload model artifacts
-      uses: actions/upload-artifact@v4
+    - name: Checkout code
+      uses: actions/checkout@v3
+      
+    - name: Set up Python
+      uses: actions/setup-python@v4
       with:
-        name: model-artifacts
+        python-version: ${{ env.PYTHON_VERSION }}
+        
+    - name: Cache pip packages
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+          
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        
+    - name: Run basic tests
+      run: |
+        python -m pytest tests/ -v --tb=short
+        
+    - name: Check code style
+      run: |
+        pip install black flake8
+        black --check src/
+        flake8 src/
+
+  # مرحلة التدريب والتقييم
+  train-and-validate:
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+      
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+        
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        
+    - name: Prepare data
+      run: |
+        python src/prepare_data.py
+        
+    - name: Train model
+      run: |
+        python src/train.py
+        
+    - name: Evaluate model
+      run: |
+        python src/evaluate.py
+        
+    - name: Upload model artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: trained-model
         path: |
           models/
           metrics/
-  
-  monitoring:
-    needs: model-training
+        retention-days: 30
+
+  # مرحلة النشر لـ Render
+  deploy:
+    needs: train-and-validate
     runs-on: ubuntu-latest
-    env:
-      GOOGLE_APPLICATION_CREDENTIALS: ${{ github.workspace }}/dvc-sa.json
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    
     steps:
-    - uses: actions/checkout@v3
-    
-    - name: Install DVC with GDrive support
-      run: pip install "dvc[gdrive]"
-    
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
-    - name: Setup Google credentials
-      run: echo "${{ secrets.GOOGLE_APPLICATION_CREDENTIALS_DATA }}" > dvc-sa.json
-
-    - name: Pull DVC data
-      run: dvc pull
-
-    - name: Run DVC pipeline
-      run: dvc repro
-
+    - name: Checkout code
+      uses: actions/checkout@v3
+      
     - name: Download model artifacts
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v3
       with:
-        name: model-artifacts
-        path: .
-    
-    - name: Run monitoring checks
+        name: trained-model
+        
+    - name: Deploy to Render
+      env:
+        RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+        RENDER_SERVICE_ID: ${{ secrets.RENDER_SERVICE_ID }}
       run: |
-        python src/model_monitor.py
-        python src/data_monitor.py
+        curl -X POST "https://api.render.com/v1/services/$RENDER_SERVICE_ID/deploys" \
+          -H "Authorization: Bearer $RENDER_API_KEY" \
+          -H "Content-Type: application/json" \
+          -d '{"clearCache": false}'
+
+  # مرحلة اختيارية للمراقبة
+  health-check:
+    needs: deploy
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     
-    - name: Upload monitoring reports
-      uses: actions/upload-artifact@v4
-      with:
-        name: monitoring-reports
-        path: reports/
+    steps:
+    - name: Wait for deployment
+      run: sleep 60
+      
+    - name: Health check
+      env:
+        APP_URL: ${{ secrets.APP_URL }}
+      run: |
+        response=$(curl -s -o /dev/null -w "%{http_code}" $APP_URL/health)
+        if [ $response -eq 200 ]; then
+          echo "✅ Deployment successful - Health check passed"
+        else
+          echo "❌ Health check failed with status: $response"
+          exit 1
+        fi
