@@ -1,2 +1,0 @@
-['remote "local-repo-cache"']
-    url = .dvc-cache
