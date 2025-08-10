@@ -39,8 +39,6 @@ assert 'Churn' in df.columns, 'Target column missing'
 assert len(df) > 1000, 'Insufficient data'
 print('Data validation passed!')
 "
-"
-
   model-training:
     needs: data-validation
     runs-on: ubuntu-latest
@@ -57,7 +55,6 @@ print('Data validation passed!')
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
-
     - name: Setup Google credentials
       run: echo "${{ secrets.GOOGLE_APPLICATION_CREDENTIALS_DATA }}" > dvc-sa.json
     
@@ -102,7 +99,6 @@ print('Data validation passed!')
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
-
     - name: Setup Google credentials
       run: echo "${{ secrets.GOOGLE_APPLICATION_CREDENTIALS_DATA }}" > dvc-sa.json
 
